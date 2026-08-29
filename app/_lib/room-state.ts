@@ -33,8 +33,6 @@ export const deviceStateGroups: readonly (readonly DeviceStateKey[])[] =
       .map((device) => device.key),
   );
 
-export const ROOM_STATE_COOKIE = "room-state";
-
 export const defaultRoomState: RoomState = {
   airConditionerOn: false,
   cabinetAirConditionerOn: false,
@@ -47,69 +45,3 @@ export const defaultRoomState: RoomState = {
   radiantHeaterOn: false,
   windowOpen: false,
 };
-
-const keys = [
-  "airConditionerOn",
-  "ceilingLightOn",
-  "doorOpen",
-  "windowOpen",
-  "cabinetAirConditionerOn",
-  "dehumidifierOn",
-  "floorFanOn",
-  "ptcHeaterOn",
-  "radiantHeaterOn",
-  "floorHeatingOn",
-] as const;
-
-export function decodeRoomState(value?: string): RoomState {
-  if (
-    !value ||
-    !/^[01]+$/.test(value) ||
-    value.length < 4 ||
-    value.length > keys.length
-  ) {
-    return { ...defaultRoomState };
-  }
-
-  const state = { ...defaultRoomState };
-
-  keys.forEach((key, index) => {
-    if (value[index]) {
-      state[key] = value[index] === "1";
-    }
-  });
-
-  return state;
-}
-
-export function encodeRoomState(state: RoomState) {
-  return keys.map((key) => (state[key] ? "1" : "0")).join("");
-}
-
-export function isRoomState(value: unknown): value is RoomState {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return false;
-  }
-
-  const state = value as Record<string, unknown>;
-  return keys.every((key) => typeof state[key] === "boolean");
-}
-
-export function parseRoomStatePatch(value: unknown): Partial<RoomState> | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return null;
-  }
-
-  const input = value as Record<string, unknown>;
-  const patch: Partial<RoomState> = {};
-
-  for (const [key, field] of Object.entries(input)) {
-    if (!keys.includes(key as (typeof keys)[number]) || typeof field !== "boolean") {
-      return null;
-    }
-
-    patch[key as keyof RoomState] = field;
-  }
-
-  return patch;
-}

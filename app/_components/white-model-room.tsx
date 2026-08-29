@@ -5,6 +5,7 @@ import BedroomFurnishings from "@/app/_components/white-model/bedroom-furnishing
 import ClimateDevices from "@/app/_components/white-model/climate-devices";
 import RoomShell from "@/app/_components/white-model/room-shell";
 import WhiteModelLightingState from "@/app/_components/white-model/white-model-lighting-state";
+import type { RoomSolarState } from "@/app/_lib/room-simulation";
 import type { DeviceStateKey, RoomState } from "@/app/_lib/room-state";
 
 type WhiteModelRoomProps = {
@@ -14,6 +15,7 @@ type WhiteModelRoomProps = {
   doorOpen: boolean;
   deviceState: RoomState;
   night: boolean;
+  solar: RoomSolarState;
   windowOpen: boolean;
   onAirConditionerToggle: () => void;
   onCeilingLightToggle: () => void;
@@ -30,6 +32,7 @@ export default function WhiteModelRoom({
   doorOpen,
   deviceState,
   night,
+  solar,
   windowOpen,
   onAirConditionerToggle,
   onCeilingLightToggle,
@@ -53,7 +56,7 @@ export default function WhiteModelRoom({
 
   return (
     <group ref={model}>
-      <WhiteModelLightingState night={night} />
+      <WhiteModelLightingState solar={solar} />
       <RoomShell
         airConditionerOn={airConditionerOn}
         airConditionerSelected={selectedDevices.includes("airConditionerOn")}
@@ -61,6 +64,7 @@ export default function WhiteModelRoom({
         ceilingLightOn={ceilingLightOn}
         doorOpen={doorOpen}
         night={night}
+        solar={solar}
         windowOpen={windowOpen}
         onAirConditionerToggle={onAirConditionerToggle}
         onCeilingLightToggle={onCeilingLightToggle}

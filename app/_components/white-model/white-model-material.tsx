@@ -1,10 +1,18 @@
 import { createContext, useContext, type ReactNode } from "react";
 import * as THREE from "three/webgpu";
 import { lights } from "three/tsl";
+import type { RoomSolarState } from "@/app/_lib/room-simulation";
 
 const ambientLight = new THREE.AmbientLight("#ffffff", 1.9);
 const sunLight = new THREE.DirectionalLight("#ffffff", 1.25);
 const moonLight = new THREE.DirectionalLight("#ffffff", 0.03);
+const roomLightTarget = new THREE.Vector3(0, 1.5, 0);
+const windowLightTarget = new THREE.Vector3(0.4, 1.15, 0.5);
+const lightDirection = new THREE.Vector3();
+const daylightAmbient = new THREE.Color("#ffffff");
+const nightAmbient = new THREE.Color("#111827");
+const daylightSun = new THREE.Color("#ffffff");
+const warmSun = new THREE.Color("#ffd0a0");
 
 function createCeilingLight(horizontal: number, castShadow: boolean) {
   const light = new THREE.SpotLight(
@@ -58,34 +66,57 @@ export function setWhiteModelCeilingLight(enabled: boolean) {
   });
 }
 
-export function setWhiteModelNightMode(enabled: boolean) {
-  ambientLight.intensity = enabled ? 0.06 : 1.9;
-  sunLight.intensity = enabled ? 0.02 : 1.25;
-  moonLight.intensity = enabled ? 0.04 : 0.03;
+export function setWhiteModelTimeOfDay(solar: RoomSolarState) {
+  const azimuth = THREE.MathUtils.degToRad(solar.azimuth);
+  const elevation = THREE.MathUtils.degToRad(solar.elevation);
+
+  ambientLight.intensity = solar.ambientIntensity;
+  ambientLight.color.lerpColors(nightAmbient, daylightAmbient, solar.daylight);
+  sunLight.intensity = solar.sunIntensity;
+  sunLight.color.lerpColors(
+    warmSun,
+    daylightSun,
+    1 - solar.warmth * 0.72,
+  );
+  moonLight.intensity = solar.moonIntensity;
+  sunLight.target.position.copy(roomLightTarget);
+  sunLight.position
+    .copy(roomLightTarget)
+    .add(
+      lightDirection
+        .set(
+          Math.sin(azimuth) * Math.cos(elevation),
+          Math.sin(elevation),
+          Math.cos(azimuth) * Math.cos(elevation),
+        )
+        .multiplyScalar(14),
+    );
+  sunLight.updateMatrixWorld();
+  sunLight.target.updateMatrixWorld();
 }
 
-export function setWhiteModelNaturalLight(enabled: boolean) {
-  const azimuthDegrees = -18;
-  const elevationDegrees = 35;
-  const azimuth = THREE.MathUtils.degToRad(azimuthDegrees);
-  const elevation = THREE.MathUtils.degToRad(elevationDegrees);
-  const facing = Math.max(Math.cos(azimuth), 0);
-  const elevationIn = THREE.MathUtils.smoothstep(elevationDegrees, 8, 24);
-  const elevationOut = 1 - THREE.MathUtils.smoothstep(elevationDegrees, 68, 82);
-  const direction = new THREE.Vector3(
-    Math.sin(azimuth) * Math.cos(elevation),
-    -Math.sin(elevation),
-    Math.cos(azimuth) * Math.cos(elevation),
-  );
-  const target = new THREE.Vector3(0.4, 1.15, 0.5);
+export function setWhiteModelNaturalLight(solar: RoomSolarState) {
+  const azimuth = THREE.MathUtils.degToRad(solar.azimuth);
+  const elevation = THREE.MathUtils.degToRad(solar.elevation);
 
-  whiteModelNaturalLight.target.position.copy(target);
+  whiteModelNaturalLight.color.lerpColors(
+    warmSun,
+    daylightSun,
+    1 - solar.warmth * 0.78,
+  );
+  whiteModelNaturalLight.target.position.copy(windowLightTarget);
   whiteModelNaturalLight.position
-    .copy(target)
-    .add(direction.multiplyScalar(-14));
-  whiteModelNaturalLight.intensity = enabled
-    ? 1.45 * facing * elevationIn * elevationOut
-    : 0;
+    .copy(windowLightTarget)
+    .add(
+      lightDirection
+        .set(
+          Math.sin(azimuth) * Math.cos(elevation),
+          -Math.sin(elevation),
+          Math.cos(azimuth) * Math.cos(elevation),
+        )
+        .multiplyScalar(-14),
+    );
+  whiteModelNaturalLight.intensity = solar.naturalIntensity;
   whiteModelNaturalLight.updateMatrixWorld();
   whiteModelNaturalLight.target.updateMatrixWorld();
 }

@@ -8,6 +8,7 @@ import NaturalWindowLight from "@/app/_components/white-model/natural-window-lig
 import RoomFixtures from "@/app/_components/white-model/room-fixtures";
 import { WhiteBox } from "@/app/_components/white-model/white-mesh";
 import WindowAirflow from "@/app/_components/white-model/window-airflow";
+import type { RoomSolarState } from "@/app/_lib/room-simulation";
 
 type RoomShellProps = {
   airConditionerOn: boolean;
@@ -16,6 +17,7 @@ type RoomShellProps = {
   ceilingLightOn: boolean;
   doorOpen: boolean;
   night: boolean;
+  solar: RoomSolarState;
   windowOpen: boolean;
   onAirConditionerToggle: () => void;
   onCeilingLightToggle: () => void;
@@ -86,6 +88,7 @@ export default function RoomShell({
   ceilingLightOn,
   doorOpen,
   night,
+  solar,
   windowOpen,
   onAirConditionerToggle,
   onCeilingLightToggle,
@@ -99,7 +102,7 @@ export default function RoomShell({
         <boxGeometry args={[10, 0.08, 8]} />
         <meshBasicMaterial colorWrite={false} depthWrite={false} />
       </mesh>
-      <NaturalWindowLight enabled={!night} />
+      <NaturalWindowLight solar={solar} />
       <CameraFacingWalls night={night} />
       <WhiteBox position={[0, 0.14, -3.9]} size={[10, 0.2, 0.12]} />
       <WhiteBox position={[-1.875, 0.14, 3.9]} size={[6.25, 0.2, 0.12]} />

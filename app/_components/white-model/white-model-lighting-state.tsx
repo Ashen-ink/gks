@@ -1,14 +1,19 @@
 import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
-import { setWhiteModelNightMode } from "@/app/_components/white-model/white-model-material";
+import { setWhiteModelTimeOfDay } from "@/app/_components/white-model/white-model-material";
+import type { RoomSolarState } from "@/app/_lib/room-simulation";
 
-export default function WhiteModelLightingState({ night }: { night: boolean }) {
+export default function WhiteModelLightingState({
+  solar,
+}: {
+  solar: RoomSolarState;
+}) {
   const invalidate = useThree((state) => state.invalidate);
 
   useEffect(() => {
-    setWhiteModelNightMode(night);
+    setWhiteModelTimeOfDay(solar);
     invalidate();
-  }, [invalidate, night]);
+  }, [invalidate, solar]);
 
   return null;
 }

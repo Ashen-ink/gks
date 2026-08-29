@@ -40,7 +40,115 @@ export type RoomSimulationSnapshot = {
   policy: string;
   time: string;
   control: Partial<RoomState>;
+  resolvedState: RoomState;
+  solar: RoomSolarState;
 };
+
+export type RoomSolarState = {
+  ambientIntensity: number;
+  azimuth: number;
+  daylight: number;
+  elevation: number;
+  hour: number;
+  moonIntensity: number;
+  naturalIntensity: number;
+  phase: "深夜" | "日出" | "白天" | "日落";
+  skyColor: string;
+  sunIntensity: number;
+  warmth: number;
+};
+
+export type RoomTimelineEvent = {
+  changes: string[];
+  index: number;
+  time: string;
+};
+
+function clamp(value: number, minimum = 0, maximum = 1) {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+function smoothstep(value: number, minimum: number, maximum: number) {
+  const progress = clamp((value - minimum) / (maximum - minimum));
+  return progress * progress * (3 - 2 * progress);
+}
+
+function mixColor(from: string, to: string, progress: number) {
+  const amount = clamp(progress);
+  const fromValue = Number.parseInt(from.slice(1), 16);
+  const toValue = Number.parseInt(to.slice(1), 16);
+  const channels = [16, 8, 0].map((shift) => {
+    const start = (fromValue >> shift) & 255;
+    const end = (toValue >> shift) & 255;
+    return Math.round(start + (end - start) * amount)
+      .toString(16)
+      .padStart(2, "0");
+  });
+
+  return `#${channels.join("")}`;
+}
+
+function hourFromTime(value: string) {
+  const match = value.match(/T(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!match) {
+    return 12;
+  }
+  return (
+    Number(match[1]) + Number(match[2]) / 60 + Number(match[3] ?? 0) / 3600
+  );
+}
+
+export function createRoomSolarState(time: string): RoomSolarState {
+  const hour = hourFromTime(time);
+  const morning = smoothstep(hour, 5.25, 7.5);
+  const evening = 1 - smoothstep(hour, 17.25, 19.75);
+  const daylight = morning * evening;
+  const sunriseWarmth = 1 - clamp(Math.abs(hour - 6.5) / 1.8);
+  const sunsetWarmth = 1 - clamp(Math.abs(hour - 18.5) / 1.8);
+  const warmth = Math.max(sunriseWarmth, sunsetWarmth);
+  const solarProgress = clamp((hour - 5.25) / 14.5);
+  const elevation = Math.max(
+    -12,
+    Math.sin(((hour - 6) / 12) * Math.PI) * 61,
+  );
+  const azimuth = -78 + solarProgress * 156;
+  const elevationIn = smoothstep(elevation, 2, 24);
+  const elevationOut = 1 - smoothstep(elevation, 72, 88);
+  const windowFacing = 0.64 + Math.cos((azimuth * Math.PI) / 180) * 0.36;
+  const nightToTwilight = mixColor("#020713", "#efb98e", daylight * 2.4);
+  const skyColor = mixColor(
+    nightToTwilight,
+    "#ffffff",
+    smoothstep(daylight, 0.3, 0.82) * (1 - warmth * 0.34),
+  );
+  const phase =
+    daylight < 0.08
+      ? "深夜"
+      : hour < 9
+        ? "日出"
+        : hour < 17
+          ? "白天"
+          : "日落";
+
+  return {
+    ambientIntensity: 0.08 + daylight * 1.82,
+    azimuth,
+    daylight,
+    elevation,
+    hour,
+    moonIntensity: 0.025 + (1 - daylight) * 0.055,
+    naturalIntensity:
+      daylight * elevationIn * elevationOut * windowFacing * 1.45,
+    phase,
+    skyColor,
+    sunIntensity: 0.02 + daylight * 1.23,
+    warmth,
+  };
+}
+
+export const defaultRoomSolarState = createRoomSolarState(
+  "2025-01-01T12:00",
+);
 
 const defaultAc = {
   capacity: "1.5p" as const,
@@ -123,21 +231,13 @@ export function isRoomSimulation(value: unknown): value is RoomSimulation {
   );
 }
 
-export function createRoomSimulationSnapshot(
+function createRoomSimulationSnapshot(
+  sample: SimulationSample,
+  result: SimulationResult,
   simulation: RoomSimulation,
   state: RoomState,
   selectedDevices: readonly DeviceStateKey[],
-): RoomSimulationSnapshot | undefined {
-  const result =
-    simulation.results.find(({ policy }) => policy === "mpc") ??
-    simulation.results.at(-1);
-  const sample =
-    result?.hourly.findLast(({ warmup }) => !warmup) ?? result?.hourly.at(-1);
-
-  if (!result || !sample) {
-    return undefined;
-  }
-
+): RoomSimulationSnapshot {
   const { lo, hi } = simulation.meta.band;
   const actionOpensWindow =
     sample.action.startsWith("全开") || sample.action.startsWith("vent");
@@ -164,16 +264,25 @@ export function createRoomSimulationSnapshot(
   const control: Partial<RoomState> = {};
 
   if (actionOpensWindow || actionClosesWindow) {
-    control.windowOpen = actionOpensWindow;
+    if (state.windowOpen !== actionOpensWindow) {
+      control.windowOpen = actionOpensWindow;
+    }
   }
 
   if (actionRunsAirConditioner || actionStopsAirConditioner) {
-    control.airConditionerOn =
+    const airConditionerOn =
       selectedDevices.includes("airConditionerOn") &&
       actionRunsAirConditioner;
-    control.cabinetAirConditionerOn =
+    const cabinetAirConditionerOn =
       selectedDevices.includes("cabinetAirConditionerOn") &&
       actionRunsAirConditioner;
+
+    if (state.airConditionerOn !== airConditionerOn) {
+      control.airConditionerOn = airConditionerOn;
+    }
+    if (state.cabinetAirConditionerOn !== cabinetAirConditionerOn) {
+      control.cabinetAirConditionerOn = cabinetAirConditionerOn;
+    }
   }
 
   const projectedState = { ...state, ...control };
@@ -214,5 +323,182 @@ export function createRoomSimulationSnapshot(
     policy: result.label,
     time: sample.t,
     control,
+    resolvedState: projectedState,
+    solar: createRoomSolarState(sample.t),
   };
+}
+
+export function createRoomSimulationTimeline(
+  simulation: RoomSimulation,
+  state: RoomState,
+  selectedDevices: readonly DeviceStateKey[],
+) {
+  const result =
+    simulation.results.find(({ policy }) => policy === "mpc") ??
+    simulation.results.at(-1);
+
+  if (!result) {
+    return [];
+  }
+
+  const activeSamples = result.hourly.filter(({ warmup }) => !warmup);
+  const samples = activeSamples.length > 0 ? activeSamples : result.hourly;
+
+  const timeline: RoomSimulationSnapshot[] = [];
+  let resolvedState = { ...state };
+
+  samples.forEach((sample) => {
+    const snapshot = createRoomSimulationSnapshot(
+      sample,
+      result,
+      simulation,
+      resolvedState,
+      selectedDevices,
+    );
+    resolvedState = snapshot.resolvedState;
+    timeline.push(snapshot);
+  });
+
+  return timeline;
+}
+
+function airConditionerEnabled(state: RoomState) {
+  return Boolean(
+    state.airConditionerOn || state.cabinetAirConditionerOn,
+  );
+}
+
+function actionLabel(action: string) {
+  if (action.startsWith("vent")) {
+    const amount = Number(action.slice(4));
+    return Number.isFinite(amount)
+      ? `窗户开启 ${Math.round(amount * 100)}%`
+      : "打开窗户";
+  }
+  if (action === "shut") {
+    return "关闭窗户";
+  }
+  if (action === "rain") {
+    return "降雨，关闭窗户";
+  }
+  return action && action !== "无动作" ? action : undefined;
+}
+
+function roomTimeValue(value: string) {
+  const match = value.match(
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/,
+  );
+  if (!match) {
+    return undefined;
+  }
+  return Date.UTC(
+    Number(match[1]),
+    Number(match[2]) - 1,
+    Number(match[3]),
+    Number(match[4]),
+    Number(match[5]),
+    Number(match[6] ?? 0),
+  );
+}
+
+function interpolateRoomTime(from: string, to: string, progress: number) {
+  const fromValue = roomTimeValue(from);
+  const toValue = roomTimeValue(to);
+  if (fromValue === undefined || toValue === undefined) {
+    return progress < 1 ? from : to;
+  }
+  return new Date(fromValue + (toValue - fromValue) * progress)
+    .toISOString()
+    .slice(0, 19);
+}
+
+function interpolate(from: number, to: number, progress: number) {
+  return from + (to - from) * progress;
+}
+
+export function interpolateRoomSimulationSnapshot(
+  timeline: readonly RoomSimulationSnapshot[],
+  position: number,
+) {
+  if (timeline.length === 0) {
+    return undefined;
+  }
+
+  const safePosition = clamp(position, 0, timeline.length - 1);
+  const lowerIndex = Math.floor(safePosition);
+  const upperIndex = Math.min(lowerIndex + 1, timeline.length - 1);
+  const progress = safePosition - lowerIndex;
+  const lower = timeline[lowerIndex];
+  const upper = timeline[upperIndex];
+
+  if (progress === 0 || lowerIndex === upperIndex) {
+    return lower;
+  }
+
+  const time = interpolateRoomTime(lower.time, upper.time, progress);
+
+  return {
+    ...lower,
+    temperature: interpolate(lower.temperature, upper.temperature, progress),
+    humidity: interpolate(lower.humidity, upper.humidity, progress),
+    airflowIntensity: interpolate(
+      lower.airflowIntensity,
+      upper.airflowIntensity,
+      progress,
+    ),
+    time,
+    solar: createRoomSolarState(time),
+  };
+}
+
+export function createRoomTimelineEvents(
+  timeline: readonly RoomSimulationSnapshot[],
+) {
+  const events: RoomTimelineEvent[] = [];
+
+  timeline.forEach((snapshot, index) => {
+    const previous = timeline[index - 1];
+    const changes: string[] = [];
+    const windowChanged = previous
+      ? snapshot.resolvedState.windowOpen !== previous.resolvedState.windowOpen
+      : snapshot.control.windowOpen !== undefined;
+    const airConditionerChanged = previous
+      ? airConditionerEnabled(snapshot.resolvedState) !==
+        airConditionerEnabled(previous.resolvedState)
+      : snapshot.control.airConditionerOn !== undefined ||
+        snapshot.control.cabinetAirConditionerOn !== undefined;
+
+    if (previous && snapshot.solar.phase !== previous.solar.phase) {
+      changes.push(snapshot.solar.phase);
+    }
+    if (windowChanged) {
+      changes.push(
+        snapshot.resolvedState.windowOpen ? "打开窗户" : "关闭窗户",
+      );
+    }
+    if (airConditionerChanged) {
+      changes.push(
+        airConditionerEnabled(snapshot.resolvedState)
+          ? "开启空调"
+          : "关闭空调",
+      );
+    }
+    const action = actionLabel(snapshot.action);
+    if (
+      action &&
+      (!previous || snapshot.action !== previous.action) &&
+      !windowChanged &&
+      !airConditionerChanged
+    ) {
+      changes.push(action);
+    }
+    if (previous && snapshot.comfort !== previous.comfort) {
+      changes.push(`体感进入${snapshot.comfort}`);
+    }
+    if (changes.length > 0) {
+      events.push({ changes: [...new Set(changes)], index, time: snapshot.time });
+    }
+  });
+
+  return events;
 }

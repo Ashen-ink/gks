@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { Canvas } from "@react-three/fiber";
 import { CentralIcon } from "@central-icons-react/all";
 import * as THREE from "three/webgpu";
@@ -18,12 +24,14 @@ import {
   defaultRoomState,
   deviceStateGroups,
   type DeviceStateKey,
-  isRoomState,
   type RoomState,
 } from "@/app/_lib/room-state";
 import {
+  createRoomTimelineEvents,
   createRoomSimulationRequest,
-  createRoomSimulationSnapshot,
+  createRoomSimulationTimeline,
+  defaultRoomSolarState,
+  interpolateRoomSimulationSnapshot,
   isRoomSimulation,
   type RoomSimulationSnapshot,
 } from "@/app/_lib/room-simulation";
@@ -37,6 +45,16 @@ type RoomInfoKey =
   | "equipment";
 
 type SimulationStatus = "idle" | "loading" | "ready" | "failed";
+
+function roomTimeLabel(value: string) {
+  const match = value.match(/T(\d{2}):(\d{2})/);
+  return match ? `${match[1]}:${match[2]}` : value;
+}
+
+function roomDateLabel(value: string) {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return match ? `${match[2]}/${match[3]}` : "";
+}
 
 THREE.setConsoleFunction((type, message, ...parameters) => {
   if (
@@ -56,8 +74,11 @@ export default function WhiteWorld() {
   const [roomConfig, setRoomConfig] = useState<RoomConfig>();
   const [roomConfigFailed, setRoomConfigFailed] = useState(false);
   const [roomState, setRoomState] = useState(defaultRoomState);
-  const [roomStateLoaded, setRoomStateLoaded] = useState(false);
-  const [simulation, setSimulation] = useState<RoomSimulationSnapshot>();
+  const [simulationTimeline, setSimulationTimeline] = useState<
+    RoomSimulationSnapshot[]
+  >([]);
+  const [timelineExpanded, setTimelineExpanded] = useState(false);
+  const [timelinePosition, setTimelinePosition] = useState(0);
   const [simulationStatus, setSimulationStatus] =
     useState<SimulationStatus>("idle");
   const [selectedDevices, setSelectedDevices] = useState<
@@ -65,27 +86,21 @@ export default function WhiteWorld() {
   >([]);
   const stateRef = useRef(roomState);
   const simulationRevision = useRef(0);
-  const localRevision = useRef(0);
-  const pendingWrites = useRef(0);
-  const patchQueue = useRef<Promise<void>>(Promise.resolve());
-  const night = roomState.ceilingLightOn;
-
-  const persistState = useCallback((patch: Partial<RoomState>) => {
-    pendingWrites.current += 1;
-    patchQueue.current = patchQueue.current
-      .then(async () => {
-        try {
-          await fetch("/api/room/state", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(patch),
-          });
-        } finally {
-          pendingWrites.current -= 1;
-        }
-      })
-      .catch(() => undefined);
-  }, []);
+  const simulation = useMemo(
+    () =>
+      interpolateRoomSimulationSnapshot(
+        simulationTimeline,
+        timelinePosition,
+      ),
+    [simulationTimeline, timelinePosition],
+  );
+  const timelineEvents = useMemo(
+    () => createRoomTimelineEvents(simulationTimeline),
+    [simulationTimeline],
+  );
+  const solar = simulation?.solar ?? defaultRoomSolarState;
+  const night = solar.daylight < 0.16;
+  const displayState = simulation?.resolvedState ?? roomState;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -119,35 +134,7 @@ export default function WhiteWorld() {
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
-
-    const revision = localRevision.current;
-
-    fetch("/api/room/state", {
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then((response) => (response.ok ? response.json() : undefined))
-      .then((state: unknown) => {
-        if (
-          isRoomState(state) &&
-          revision === localRevision.current &&
-          pendingWrites.current === 0
-        ) {
-          stateRef.current = state;
-          setRoomState(state);
-        }
-        setRoomStateLoaded(true);
-      })
-      .catch(() => setRoomStateLoaded(true));
-
-    return () => {
-      controller.abort();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!roomConfig || !roomStateLoaded) {
+    if (!roomConfig) {
       return;
     }
 
@@ -159,7 +146,11 @@ export default function WhiteWorld() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
-          createRoomSimulationRequest(roomConfig, roomState, selectedDevices),
+          createRoomSimulationRequest(
+            roomConfig,
+            stateRef.current,
+            selectedDevices,
+          ),
         ),
         cache: "no-store",
         signal: controller.signal,
@@ -174,31 +165,20 @@ export default function WhiteWorld() {
           if (!isRoomSimulation(result)) {
             throw new Error("Invalid room simulation");
           }
-          const snapshot = createRoomSimulationSnapshot(
+          const timeline = createRoomSimulationTimeline(
             result,
-            roomState,
+            stateRef.current,
             selectedDevices,
           );
+          const snapshot = timeline[0];
           if (!snapshot) {
             throw new Error("Room simulation has no samples");
           }
           if (revision !== simulationRevision.current) {
             return;
           }
-          const control = Object.fromEntries(
-            Object.entries(snapshot.control).filter(
-              ([key, value]) =>
-                stateRef.current[key as keyof RoomState] !== value,
-            ),
-          ) as Partial<RoomState>;
-          if (Object.keys(control).length > 0) {
-            const state = { ...stateRef.current, ...control };
-            localRevision.current += 1;
-            stateRef.current = state;
-            setRoomState(state);
-            persistState(control);
-          }
-          setSimulation(snapshot);
+          setSimulationTimeline(timeline);
+          setTimelinePosition(0);
           setSimulationStatus("ready");
         })
         .catch((error: unknown) => {
@@ -215,15 +195,14 @@ export default function WhiteWorld() {
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [persistState, roomConfig, roomState, roomStateLoaded, selectedDevices]);
+  }, [roomConfig, roomState, selectedDevices]);
 
   const toggleState = (key: keyof RoomState) => {
-    const value = !stateRef.current[key];
-    const state = { ...stateRef.current, [key]: value };
-    localRevision.current += 1;
+    const state = { ...displayState, [key]: !displayState[key] };
     stateRef.current = state;
+    setSimulationTimeline([]);
+    setTimelinePosition(0);
     setRoomState(state);
-    persistState({ [key]: value });
   };
 
   const selectDevice = (key: DeviceStateKey) => {
@@ -242,11 +221,11 @@ export default function WhiteWorld() {
       return selected ? remaining : [...remaining, key];
     });
 
-    const state = { ...stateRef.current, ...patch };
-    localRevision.current += 1;
+    const state = { ...displayState, ...patch };
     stateRef.current = state;
+    setSimulationTimeline([]);
+    setTimelinePosition(0);
     setRoomState(state);
-    persistState(patch);
   };
 
   const roomDetails = roomConfig
@@ -554,19 +533,20 @@ export default function WhiteWorld() {
               return renderer;
             }}
           >
-            <color attach="background" args={[night ? "#020713" : "#ffffff"]} />
+            <color attach="background" args={[solar.skyColor]} />
             <AmbientOcclusion />
             <CameraControls />
             <GroundShadow />
             <WhiteModelRoom
-              airConditionerOn={roomState.airConditionerOn}
+              airConditionerOn={displayState.airConditionerOn}
               airflowIntensity={simulation?.airflowIntensity ?? 1}
-              ceilingLightOn={roomState.ceilingLightOn}
-              deviceState={roomState}
-              doorOpen={roomState.doorOpen}
+              ceilingLightOn={displayState.ceilingLightOn}
+              deviceState={displayState}
+              doorOpen={displayState.doorOpen}
               night={night}
               selectedDevices={selectedDevices}
-              windowOpen={roomState.windowOpen}
+              solar={solar}
+              windowOpen={displayState.windowOpen}
               onAirConditionerToggle={() => toggleState("airConditionerOn")}
               onCeilingLightToggle={() => toggleState("ceilingLightOn")}
               onDeviceToggle={(key) => toggleState(key)}
@@ -576,6 +556,103 @@ export default function WhiteWorld() {
           </Canvas>
         ) : null}
       </div>
+      {simulationTimeline.length > 1 && simulation ? (
+        <aside
+          className="room-timeline"
+          aria-label="仿真时间轴"
+          data-expanded={timelineExpanded}
+          style={
+            {
+              "--timeline-progress": `${
+                (timelinePosition / (simulationTimeline.length - 1)) * 100
+              }%`,
+            } as CSSProperties
+          }
+        >
+          {timelineExpanded ? (
+            <section className="room-timeline__events">
+              <header className="room-timeline__events-header">
+                <div>
+                  <span>时段变化</span>
+                  <small>{timelineEvents.length} 项</small>
+                </div>
+                <time dateTime={simulation.time}>
+                  {roomDateLabel(simulation.time)}
+                </time>
+              </header>
+              {timelineEvents.length > 0 ? (
+                <ol className="room-timeline__event-list">
+                  {timelineEvents.map((event) => (
+                    <li key={`${event.time}-${event.index}`}>
+                      <button
+                        type="button"
+                        className="room-timeline__event"
+                        aria-current={
+                          Math.floor(timelinePosition) === event.index
+                        }
+                        onClick={() => setTimelinePosition(event.index)}
+                      >
+                        <time
+                          className="room-timeline__event-time"
+                          dateTime={event.time}
+                        >
+                          {roomTimeLabel(event.time)}
+                        </time>
+                        <span className="room-timeline__event-changes">
+                          {event.changes.join(" · ")}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="room-timeline__empty">当前时段没有状态变化</p>
+              )}
+            </section>
+          ) : null}
+          <div className="room-timeline__rail">
+            <button
+              type="button"
+              className="room-timeline__toggle"
+              aria-label={timelineExpanded ? "收起时间轴" : "展开时间轴"}
+              aria-expanded={timelineExpanded}
+              onClick={() => setTimelineExpanded((current) => !current)}
+            >
+              <CentralIcon
+                name="IconChevronLeft"
+                join="round"
+                fill="outlined"
+                radius="3"
+                stroke="1.5"
+                size={16}
+              />
+            </button>
+            <time
+              className="room-timeline__current"
+              dateTime={simulation.time}
+            >
+              {roomTimeLabel(simulation.time)}
+            </time>
+            <span className="room-timeline__phase">{solar.phase}</span>
+            <div className="room-timeline__track">
+              <input
+                type="range"
+                aria-label="调整仿真时间"
+                min={0}
+                max={simulationTimeline.length - 1}
+                step={0.01}
+                value={timelinePosition}
+                onChange={(event) =>
+                  setTimelinePosition(Number(event.currentTarget.value))
+                }
+              />
+            </div>
+            <span className="room-timeline__date">
+              {roomDateLabel(simulation.time)}
+            </span>
+          </div>
+        </aside>
+      ) : null}
       {roomConfig ? (
         <RoomFurnitureTable
           open={furnitureOpen}

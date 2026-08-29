@@ -4,14 +4,19 @@ import {
   setWhiteModelNaturalLight,
   whiteModelNaturalLight,
 } from "@/app/_components/white-model/white-model-material";
+import type { RoomSolarState } from "@/app/_lib/room-simulation";
 
-export default function NaturalWindowLight({ enabled }: { enabled: boolean }) {
+export default function NaturalWindowLight({
+  solar,
+}: {
+  solar: RoomSolarState;
+}) {
   const invalidate = useThree((state) => state.invalidate);
 
   useEffect(() => {
-    setWhiteModelNaturalLight(enabled);
+    setWhiteModelNaturalLight(solar);
     invalidate();
-  }, [enabled, invalidate]);
+  }, [invalidate, solar]);
 
   return (
     <>
