@@ -4,7 +4,7 @@ import {
 } from "@/app/_components/landing/sensor-optics-layout";
 
 type SensorCubeLightMesh = {
-  vertices: Float32Array;
+  vertices: Float32Array<ArrayBuffer>;
   incoming: { firstVertex: number; vertices: number };
   squareEntry: { firstVertex: number; vertices: number };
   squareInternal: { firstVertex: number; vertices: number };
@@ -113,8 +113,13 @@ export function createSensorCubeLightMesh(): SensorCubeLightMesh {
     0.065,
   );
 
+  const vertexData = new Float32Array(
+    new ArrayBuffer(vertices.length * Float32Array.BYTES_PER_ELEMENT),
+  );
+  vertexData.set(vertices);
+
   return {
-    vertices: new Float32Array(vertices),
+    vertices: vertexData,
     incoming: { firstVertex: 0, vertices: VERTICES_PER_SECTION },
     squareEntry: {
       firstVertex: VERTICES_PER_SECTION,
