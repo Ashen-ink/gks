@@ -27,6 +27,8 @@ THREE.setConsoleFunction((type, message, ...parameters) => {
 export default function WhiteWorld() {
   const [roomState, setRoomState] = useState(defaultRoomState);
   const stateRef = useRef(roomState);
+  const localRevision = useRef(0);
+  const latestRead = useRef(0);
   const pendingWrites = useRef(0);
   const patchQueue = useRef<Promise<void>>(Promise.resolve());
   const night = roomState.ceilingLightOn;
@@ -35,13 +37,25 @@ export default function WhiteWorld() {
     const controller = new AbortController();
 
     const syncState = () => {
+      if (pendingWrites.current > 0) {
+        return;
+      }
+
+      const read = ++latestRead.current;
+      const revision = localRevision.current;
+
       fetch("/api/room/state", {
         cache: "no-store",
         signal: controller.signal,
       })
         .then((response) => (response.ok ? response.json() : undefined))
         .then((state: unknown) => {
-          if (isRoomState(state) && pendingWrites.current === 0) {
+          if (
+            isRoomState(state) &&
+            read === latestRead.current &&
+            revision === localRevision.current &&
+            pendingWrites.current === 0
+          ) {
             stateRef.current = state;
             setRoomState(state);
           }
@@ -78,6 +92,7 @@ export default function WhiteWorld() {
   const toggleState = (key: keyof RoomState) => {
     const value = !stateRef.current[key];
     const state = { ...stateRef.current, [key]: value };
+    localRevision.current += 1;
     stateRef.current = state;
     setRoomState(state);
     persistState({ [key]: value });
