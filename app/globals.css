@@ -313,7 +313,8 @@ body {
   flex: 0 0 clamp(52px, 4vw, 58px);
   flex-direction: column;
   align-items: stretch;
-  padding: 5px 5px 12px;
+  gap: 10px;
+  padding: 6px 5px;
   border-radius: 999px;
 }
 
@@ -367,6 +368,42 @@ body {
   transform: rotate(180deg);
 }
 
+.room-timeline__play {
+  display: grid;
+  width: 38px;
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 0;
+  place-items: center;
+  appearance: none;
+  border: 1px solid rgb(0 0 0 / 7%);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 7px 18px rgb(0 0 0 / 9%);
+  color: inherit;
+  cursor: pointer;
+  transition: background 200ms ease;
+}
+
+.room-timeline__play:hover {
+  background: #fff;
+}
+
+.white-world[data-night="true"] .room-timeline__play {
+  border-color: rgb(255 255 255 / 12%);
+  background: rgb(5 10 19 / 92%);
+  box-shadow: 0 7px 20px rgb(0 0 0 / 26%);
+}
+
+.white-world[data-night="true"] .room-timeline__play:hover {
+  background: rgb(10 17 30 / 96%);
+}
+
+.room-timeline__play svg {
+  width: 11px;
+}
+
 .room-timeline__current,
 .room-timeline__event-time {
   font-variant-numeric: tabular-nums;
@@ -394,12 +431,19 @@ body {
 
 .room-timeline__track {
   --timeline-axis: 50%;
+  --timeline-drag-offset: -88px;
+  --timeline-drag-width: 176px;
   position: relative;
   width: 100%;
   height: var(--timeline-track-length);
   flex: 0 1 var(--timeline-track-length);
   min-height: 120px;
-  margin: 14px 0 7px;
+  margin: 0;
+}
+
+.room-timeline[data-expanded="true"] .room-timeline__track {
+  --timeline-drag-offset: -23px;
+  --timeline-drag-width: 46px;
 }
 
 .room-timeline__scale {
@@ -550,12 +594,13 @@ body {
   left: 50%;
   z-index: 1;
   width: var(--timeline-track-length);
-  height: 46px;
+  height: var(--timeline-drag-width);
   margin: 0;
   appearance: none;
   background: transparent;
   cursor: ns-resize;
   outline: 0;
+  touch-action: none;
   transform: translate(-50%, -50%) rotate(90deg);
 }
 
@@ -566,8 +611,8 @@ body {
 
 .room-timeline__track input::-webkit-slider-thumb {
   width: 30px;
-  height: 46px;
-  margin-top: -23px;
+  height: var(--timeline-drag-width);
+  margin-top: var(--timeline-drag-offset);
   appearance: none;
   border: 0;
   background: transparent;
@@ -581,7 +626,7 @@ body {
 
 .room-timeline__track input::-moz-range-thumb {
   width: 30px;
-  height: 46px;
+  height: var(--timeline-drag-width);
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -766,7 +811,8 @@ body {
   .room-timeline__rail {
     width: 50px;
     flex-basis: 50px;
-    padding: 5px 5px 10px;
+    gap: 8px;
+    padding: 5px;
     border-radius: 999px;
   }
 
@@ -782,6 +828,10 @@ body {
   }
 
   .room-timeline__toggle {
+    width: 36px;
+  }
+
+  .room-timeline__play {
     width: 36px;
   }
 

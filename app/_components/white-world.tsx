@@ -92,6 +92,7 @@ export default function WhiteWorld() {
     RoomSimulationSnapshot[]
   >([]);
   const [timelineExpanded, setTimelineExpanded] = useState(false);
+  const [timelinePlaying, setTimelinePlaying] = useState(true);
   const [timelinePosition, setTimelinePosition] = useState(0);
   const [simulationStatus, setSimulationStatus] =
     useState<SimulationStatus>("idle");
@@ -224,6 +225,28 @@ export default function WhiteWorld() {
       controller.abort();
     };
   }, [roomConfig]);
+
+  useEffect(() => {
+    const lastIndex = simulationTimeline.length - 1;
+    if (!timelinePlaying || lastIndex < 1) {
+      return;
+    }
+
+    let animationFrame = 0;
+    let previousTime = performance.now();
+    const advance = (time: number) => {
+      const elapsed = Math.min(time - previousTime, 250);
+      previousTime = time;
+      setTimelinePosition((current) => {
+        const next = current + elapsed / 6000;
+        return next >= lastIndex ? 0 : next;
+      });
+      animationFrame = window.requestAnimationFrame(advance);
+    };
+
+    animationFrame = window.requestAnimationFrame(advance);
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [simulationTimeline.length, timelinePlaying]);
 
   const toggleState = (key: keyof RoomState) => {
     const state = { ...displayState, [key]: !displayState[key] };
@@ -619,7 +642,10 @@ export default function WhiteWorld() {
                         aria-current={
                           Math.floor(timelinePosition) === event.index
                         }
-                        onClick={() => setTimelinePosition(event.index)}
+                        onClick={() => {
+                          setTimelinePlaying(false);
+                          setTimelinePosition(event.index);
+                        }}
                       >
                         <time
                           className="room-timeline__event-time"
@@ -704,11 +730,29 @@ export default function WhiteWorld() {
                 max={simulationTimeline.length - 1}
                 step={0.05}
                 value={timelinePosition}
-                onChange={(event) =>
-                  setTimelinePosition(Number(event.currentTarget.value))
-                }
+                onPointerDown={() => setTimelinePlaying(false)}
+                onChange={(event) => {
+                  setTimelinePlaying(false);
+                  setTimelinePosition(Number(event.currentTarget.value));
+                }}
               />
             </div>
+            <button
+              type="button"
+              className="room-timeline__play"
+              aria-label={timelinePlaying ? "暂停时间轴" : "播放时间轴"}
+              aria-pressed={timelinePlaying}
+              onClick={() => setTimelinePlaying((current) => !current)}
+            >
+              <CentralIcon
+                name={timelinePlaying ? "IconPause" : "IconPlay"}
+                join="round"
+                fill="outlined"
+                radius="3"
+                stroke="1.5"
+                size={13}
+              />
+            </button>
           </div>
         </aside>
       ) : null}

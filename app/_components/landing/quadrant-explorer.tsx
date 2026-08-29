@@ -1,5 +1,6 @@
 "use client";
 
+import { CentralIcon } from "@central-icons-react/all";
 import {
   useCallback,
   useEffect,
@@ -187,8 +188,10 @@ export default function QuadrantExplorer() {
 
     const previousBodyOverflow = document.body.style.overflow;
     const previousBodyPaddingRight = document.body.style.paddingRight;
+    const previousRootOverflow = document.documentElement.style.overflow;
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
 
+    document.documentElement.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
     if (scrollbarWidth > 0) {
       document.body.style.paddingRight = `${scrollbarWidth}px`;
@@ -208,6 +211,7 @@ export default function QuadrantExplorer() {
       if (dialog.open) {
         dialog.close();
       }
+      document.documentElement.style.overflow = previousRootOverflow;
       document.body.style.overflow = previousBodyOverflow;
       document.body.style.paddingRight = previousBodyPaddingRight;
 
@@ -254,9 +258,14 @@ export default function QuadrantExplorer() {
               </span>
               <span className={styles.cardAction} aria-hidden="true">
                 <span>查看详情</span>
-                <svg viewBox="0 0 28 28">
-                  <path d="M5 23 23 5M10 5h13v13" />
-                </svg>
+                <CentralIcon
+                  name="IconArrowUpRight"
+                  join="round"
+                  fill="outlined"
+                  radius="3"
+                  stroke="1.5"
+                  size={24}
+                />
               </span>
             </button>
           </article>
@@ -271,6 +280,7 @@ export default function QuadrantExplorer() {
         aria-modal="true"
         aria-labelledby={`${dialogId}-title`}
         aria-describedby={`${dialogId}-description`}
+        data-lenis-prevent
         onCancel={(event) => {
           event.preventDefault();
           closeDialog();
@@ -312,9 +322,14 @@ export default function QuadrantExplorer() {
               onClick={closeDialog}
             >
               <span>关闭</span>
-              <svg viewBox="0 0 28 28" aria-hidden="true">
-                <path d="m6 6 16 16M22 6 6 22" />
-              </svg>
+              <CentralIcon
+                name="IconCrossMedium"
+                join="round"
+                fill="outlined"
+                radius="3"
+                stroke="1.5"
+                size={20}
+              />
             </button>
           </header>
 
@@ -359,9 +374,14 @@ export default function QuadrantExplorer() {
             </div>
             <button type="button" onClick={closeDialog}>
               返回四项
-              <svg viewBox="0 0 28 28" aria-hidden="true">
-                <path d="M23 14H5m7-7-7 7 7 7" />
-              </svg>
+              <CentralIcon
+                name="IconArrowLeft"
+                join="round"
+                fill="outlined"
+                radius="3"
+                stroke="1.5"
+                size={20}
+              />
             </button>
           </footer>
         </div>

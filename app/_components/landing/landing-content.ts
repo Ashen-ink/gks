@@ -64,6 +64,27 @@ export const decisionSteps = [
   },
 ] as const;
 
+export const operatingModes = [
+  {
+    season: "避暑季",
+    condition: "凉而潮",
+    focus: "除湿",
+    body: "室外空气合适时开窗。降雨或室外含湿量过高时关窗，并启用独立除湿。",
+  },
+  {
+    season: "冬季",
+    condition: "有人居住，换气会带走热量",
+    focus: "供暖择优",
+    body: "比较供暖设备、房间占用和换气时机。这里的目标是控制电耗，舒适与节能之间仍需现场确定权重。",
+  },
+  {
+    season: "长期空置",
+    condition: "房屋连续 6—9 个月无人",
+    focus: "风险值守",
+    body: "识别冷表面的连续高湿风险。春秋可间歇除湿；冬季仍需表面温度节点与现场标定。",
+  },
+] as const;
+
 export const evidenceLegend = [
   {
     label: "气象数据",
@@ -71,7 +92,7 @@ export const evidenceLegend = [
   },
   {
     label: "已经完成",
-    text: "安顺基准户型上的多房间热湿仿真和滚动优化。",
+    text: "安顺基准户型的多房间热湿仿真，以及开窗、除湿、空调三类动作试算。",
   },
   {
     label: "还要实测",

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { CentralIcon } from "@central-icons-react/all";
 import Image from "next/image";
 import Link from "next/link";
 import QuadrantExplorer from "@/app/_components/landing/quadrant-explorer";
+import SmoothScroll from "@/app/_components/landing/smooth-scroll";
 import {
   decisionSteps,
-  evidenceLegend,
   painChapters,
 } from "@/app/_components/landing/landing-content";
 import styles from "@/app/_components/landing/landing.module.css";
@@ -17,15 +18,21 @@ export const metadata: Metadata = {
 
 function ArrowIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 32 32">
-      <path d="M7 25 25 7M12 7h13v13" />
-    </svg>
+    <CentralIcon
+      name="IconArrowUpRight"
+      join="round"
+      fill="outlined"
+      radius="3"
+      stroke="1.5"
+      size={20}
+    />
   );
 }
 
 export default function HomePage() {
   return (
-    <main className={styles.page} id="main-content">
+    <SmoothScroll>
+      <main className={styles.page} id="main-content">
       <a className={styles.skipLink} href="#problem">
         跳至正文
       </a>
@@ -180,20 +187,6 @@ export default function HomePage() {
 
       <QuadrantExplorer />
 
-      <section className={styles.evidence} aria-labelledby="evidence-title">
-        <div className={styles.evidenceHeading}>
-          <h2 id="evidence-title">这些数字从哪里来，做到哪一步。</h2>
-        </div>
-        <div className={styles.evidenceList}>
-          {evidenceLegend.map((item) => (
-            <article key={item.label}>
-              <h3>{item.label}</h3>
-              <p>{item.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
       <footer className={styles.closing}>
         <div className={styles.closingMedia}>
           <Image
@@ -218,6 +211,7 @@ export default function HomePage() {
           </Link>
         </div>
       </footer>
-    </main>
+      </main>
+    </SmoothScroll>
   );
 }

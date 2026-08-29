@@ -1,38 +1,40 @@
 # 常宁居
 
-基于 Next.js、React Three Fiber、Three.js WebGPU 与 VGPU 的交互式室内环境项目。
+常宁居是面向贵州避暑旅居房源的微气候调控项目。系统读取各房间的温湿度、门窗状态与短时天气，分别试算开窗、除湿和空调等动作，再选择当前周期的处理方式。
 
-## 开发
+项目覆盖三类运行场景：
 
-```bash
-bun install
-bun dev
-```
+- 避暑季：室外凉而潮，重点判断何时开窗、何时独立除湿。
+- 冬季有人居住：在换气需求、供暖能耗与室内舒适之间取舍。
+- 长期空置：识别墙面与家具的霉变风险，并在设备可用的工况下值守。
 
-## 检查
+当前版本以 Web 交互原型呈现项目的问题、数据、决策过程与房间仿真。
 
-```bash
-bun run lint
-bun run build
-```
+## 为什么需要判断
 
-## 结构
+贵州避暑房的夏夜通常不热，但湿度很高。九个市州的夏季夜间相对湿度普遍在 83% 至 94%，安顺夏季约四分之一的小时有降水。窗外温度合适，并不意味着此刻适合开窗。
 
-- `app/_components/white-world.tsx`：WebGPU 白色世界
-- `app/_components/room-furniture-table.tsx`：设备选择面板
-- `app/_components/room-furniture-model-preview.tsx`：设备模型预览
-- `app/_components/exterior/ground-shadow.tsx`：房间外围接地阴影
-- `app/_components/camera-controls.tsx`：相机视角控制
-- `app/_components/white-model-room.tsx`：白模房间入口
-- `app/_components/white-model/room-shell.tsx`：房间结构
-- `app/_components/white-model/room-fixtures.tsx`：空调、门和顶灯等固定设备
-- `app/_components/white-model/climate-devices.tsx`：可选环境设备
-- `app/_components/white-model/device-airflow.tsx`：设备气流
-- `app/_components/white-model/camera-facing-walls.tsx`：相机遮挡墙控制
-- `app/_components/white-model/bedroom-furnishings.tsx`：卧室家具
-- `app/_components/white-model/white-mesh.tsx`：白模几何组件
-- `app/_components/white-model/white-model-material.tsx`：白模独立光照材质
-- `app/_components/white-model/white-model-lighting-state.tsx`：白模昼夜亮度状态
-- `app/_components/white-model/natural-window-light.tsx`：窗户自然入射光
-- `app/_components/landing`：Landing Page 组件
-- `app/_shaders`：VGPU Shader
+判断还受到户型影响。目标小户型的卧室通常只有单侧开口，白天公共区域可能形成穿堂风，夜间关闭卧室门后，气流路径会完全改变。因此，同一套固定温湿度阈值无法覆盖不同城市、朝向、房型和居住状态。
+
+## 系统怎样工作
+
+每轮计算读取四组输入：
+
+1. **房屋**：房间连接关系、门窗状态、开口与设备配置。
+2. **气象**：室外温湿度、含湿量、风向、风速、太阳辐射与短时降雨。
+3. **体感**：自适应舒适范围，以及人在卧室、客厅等位置受到的温度与气流影响。
+4. **居住者**：在住、睡眠、离开和长期空置状态，以及住户的手动接管。
+
+模型分别预测保持现状、建议开窗、独立除湿和使用空调后的房间温湿度。当前周期只执行一个结果；天气、房间或居住状态变化后，再用新数据重新计算。
+
+## 能力边界
+
+- 免施工方案可直控空调与除湿机；手动门窗只提供建议，并通过门窗磁读取实际状态。
+- 页面中的气象结论来自九个市州的逐小时再分析数据；再分析数据不等同于房屋现场实测。
+- 当前结果属于真实气象驱动的物理仿真，不代表已完成整屋硬件部署或长期实测验证。
+- 空置期目前能够识别风险窗口。压缩式除湿机无法覆盖全部冬季工况，防霉效果仍需要表面温度节点和现场标定验证。
+- 个体偏好学习与跨住户学习属于后续能力，当前版本使用明确规则与预设参数。
+
+## 数据与研究口径
+
+项目研究目前覆盖 16 个楼盘、125 个带尺寸标注的户型，以及九个市州的逐小时气象数据。官网只展示能够说明问题和当前能力边界的结论；未经现场标定的结果应明确标注为仿真，不使用绝对节能率或已实现防霉等表述。
