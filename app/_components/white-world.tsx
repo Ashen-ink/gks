@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import * as THREE from "three/webgpu";
+import AmbientOcclusion from "@/app/_components/ambient-occlusion";
 import CameraControls from "@/app/_components/camera-controls";
 import GroundShadow from "@/app/_components/exterior/ground-shadow";
 import WhiteModelRoom from "@/app/_components/white-model-room";
@@ -118,6 +119,7 @@ export default function WhiteWorld() {
         }}
       >
         <color attach="background" args={[night ? "#020713" : "#ffffff"]} />
+        <AmbientOcclusion />
         <CameraControls />
         <GroundShadow />
         <WhiteModelRoom
