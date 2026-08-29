@@ -9,6 +9,7 @@ import type { DeviceStateKey, RoomState } from "@/app/_lib/room-state";
 
 type WhiteModelRoomProps = {
   airConditionerOn: boolean;
+  airflowIntensity: number;
   ceilingLightOn: boolean;
   doorOpen: boolean;
   deviceState: RoomState;
@@ -24,6 +25,7 @@ type WhiteModelRoomProps = {
 
 export default function WhiteModelRoom({
   airConditionerOn,
+  airflowIntensity,
   ceilingLightOn,
   doorOpen,
   deviceState,
@@ -55,6 +57,7 @@ export default function WhiteModelRoom({
       <RoomShell
         airConditionerOn={airConditionerOn}
         airConditionerSelected={selectedDevices.includes("airConditionerOn")}
+        airflowIntensity={airflowIntensity}
         ceilingLightOn={ceilingLightOn}
         doorOpen={doorOpen}
         night={night}
@@ -66,6 +69,7 @@ export default function WhiteModelRoom({
       />
       <BedroomFurnishings />
       <ClimateDevices
+        airflowIntensity={airflowIntensity}
         state={deviceState}
         selectedDevices={selectedDevices}
         onToggle={onDeviceToggle}

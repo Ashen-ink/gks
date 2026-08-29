@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { CentralIcon } from "@central-icons-react/all";
 import * as THREE from "three/webgpu";
@@ -21,8 +21,22 @@ import {
   isRoomState,
   type RoomState,
 } from "@/app/_lib/room-state";
+import {
+  createRoomSimulationRequest,
+  createRoomSimulationSnapshot,
+  isRoomSimulation,
+  type RoomSimulationSnapshot,
+} from "@/app/_lib/room-simulation";
 
-type RoomInfoKey = "site" | "period" | "persona" | "schedule" | "equipment";
+type RoomInfoKey =
+  | "climate"
+  | "site"
+  | "period"
+  | "persona"
+  | "schedule"
+  | "equipment";
+
+type SimulationStatus = "idle" | "loading" | "ready" | "failed";
 
 THREE.setConsoleFunction((type, message, ...parameters) => {
   if (
@@ -42,14 +56,36 @@ export default function WhiteWorld() {
   const [roomConfig, setRoomConfig] = useState<RoomConfig>();
   const [roomConfigFailed, setRoomConfigFailed] = useState(false);
   const [roomState, setRoomState] = useState(defaultRoomState);
+  const [roomStateLoaded, setRoomStateLoaded] = useState(false);
+  const [simulation, setSimulation] = useState<RoomSimulationSnapshot>();
+  const [simulationStatus, setSimulationStatus] =
+    useState<SimulationStatus>("idle");
   const [selectedDevices, setSelectedDevices] = useState<
     readonly DeviceStateKey[]
   >([]);
   const stateRef = useRef(roomState);
+  const simulationRevision = useRef(0);
   const localRevision = useRef(0);
   const pendingWrites = useRef(0);
   const patchQueue = useRef<Promise<void>>(Promise.resolve());
   const night = roomState.ceilingLightOn;
+
+  const persistState = useCallback((patch: Partial<RoomState>) => {
+    pendingWrites.current += 1;
+    patchQueue.current = patchQueue.current
+      .then(async () => {
+        try {
+          await fetch("/api/room/state", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(patch),
+          });
+        } finally {
+          pendingWrites.current -= 1;
+        }
+      })
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -101,30 +137,85 @@ export default function WhiteWorld() {
           stateRef.current = state;
           setRoomState(state);
         }
+        setRoomStateLoaded(true);
       })
-      .catch(() => undefined);
+      .catch(() => setRoomStateLoaded(true));
 
     return () => {
       controller.abort();
     };
   }, []);
 
-  const persistState = (patch: Partial<RoomState>) => {
-    pendingWrites.current += 1;
-    patchQueue.current = patchQueue.current
-      .then(async () => {
-        try {
-          await fetch("/api/room/state", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(patch),
-          });
-        } finally {
-          pendingWrites.current -= 1;
-        }
+  useEffect(() => {
+    if (!roomConfig || !roomStateLoaded) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const revision = ++simulationRevision.current;
+    const timeout = window.setTimeout(() => {
+      setSimulationStatus("loading");
+      fetch("/api/room/simulate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          createRoomSimulationRequest(roomConfig, roomState, selectedDevices),
+        ),
+        cache: "no-store",
+        signal: controller.signal,
       })
-      .catch(() => undefined);
-  };
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Room simulation request failed");
+          }
+          return response.json();
+        })
+        .then((result: unknown) => {
+          if (!isRoomSimulation(result)) {
+            throw new Error("Invalid room simulation");
+          }
+          const snapshot = createRoomSimulationSnapshot(
+            result,
+            roomState,
+            selectedDevices,
+          );
+          if (!snapshot) {
+            throw new Error("Room simulation has no samples");
+          }
+          if (revision !== simulationRevision.current) {
+            return;
+          }
+          const control = Object.fromEntries(
+            Object.entries(snapshot.control).filter(
+              ([key, value]) =>
+                stateRef.current[key as keyof RoomState] !== value,
+            ),
+          ) as Partial<RoomState>;
+          if (Object.keys(control).length > 0) {
+            const state = { ...stateRef.current, ...control };
+            localRevision.current += 1;
+            stateRef.current = state;
+            setRoomState(state);
+            persistState(control);
+          }
+          setSimulation(snapshot);
+          setSimulationStatus("ready");
+        })
+        .catch((error: unknown) => {
+          if (
+            revision === simulationRevision.current &&
+            !(error instanceof DOMException && error.name === "AbortError")
+          ) {
+            setSimulationStatus("failed");
+          }
+        });
+    }, 450);
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [persistState, roomConfig, roomState, roomStateLoaded, selectedDevices]);
 
   const toggleState = (key: keyof RoomState) => {
     const value = !stateRef.current[key];
@@ -160,6 +251,27 @@ export default function WhiteWorld() {
 
   const roomDetails = roomConfig
     ? {
+        climate: {
+          title: "室内气候",
+          rows: simulation
+            ? [
+                ["温度", `${simulation.temperature.toFixed(1)} °C`],
+                ["湿度", `${Math.round(simulation.humidity)}%`],
+                ["风向", simulation.windDirection],
+                ["舒适度", simulation.comfort],
+                ["不舒适度时", simulation.degreeHours?.toFixed(1) ?? "—"],
+                ["气流强度", `${Math.round(simulation.airflowIntensity * 100)}%`],
+                ["仿真策略", simulation.policy],
+                ["当前动作", simulation.action],
+                ["结果时刻", simulation.time],
+              ]
+            : [
+                [
+                  "状态",
+                  simulationStatus === "failed" ? "模拟连接失败" : "正在计算",
+                ],
+              ],
+        },
         site: {
           title: "地点",
           rows: [
@@ -260,6 +372,32 @@ export default function WhiteWorld() {
       {roomConfig ? (
         <header className="room-environment-bar" aria-label="环境信息">
           <nav>
+            <button
+              type="button"
+              aria-expanded={activeInfo === "climate"}
+              data-status={simulationStatus}
+              onClick={() =>
+                setActiveInfo((current) =>
+                  current === "climate" ? undefined : "climate",
+                )
+              }
+            >
+              <CentralIcon
+                name="IconThermostat"
+                join="round"
+                fill="outlined"
+                radius="3"
+                stroke="1.5"
+                size={15}
+              />
+              <span>
+                {simulation
+                  ? `${simulation.temperature.toFixed(1)}° · ${Math.round(simulation.humidity)}%`
+                  : simulationStatus === "failed"
+                    ? "模拟失败"
+                    : "模拟中"}
+              </span>
+            </button>
             <button
               type="button"
               aria-expanded={activeInfo === "site"}
@@ -397,22 +535,24 @@ export default function WhiteWorld() {
       <div className="white-world__viewport">
         {roomConfig ? (
           <Canvas
-          flat
-          frameloop="demand"
-          resize={{ debounce: 0 }}
-          shadows={{ type: THREE.PCFShadowMap }}
-          camera={{ position: [13, 9, 15], fov: 32, near: 0.1, far: 100 }}
-          onCreated={({ camera }) => camera.lookAt(0, 2.2, 0)}
-          gl={async (rendererProps) => {
-            const renderer = new THREE.WebGPURenderer({
-              ...(rendererProps as ConstructorParameters<typeof THREE.WebGPURenderer>[0]),
-              antialias: true,
-              alpha: false,
-            });
-            await renderer.init();
-            renderer.setClearColor("#ffffff", 1);
-            return renderer;
-          }}
+            flat
+            frameloop="demand"
+            resize={{ debounce: 0 }}
+            shadows={{ type: THREE.PCFShadowMap }}
+            camera={{ position: [13, 9, 15], fov: 32, near: 0.1, far: 100 }}
+            onCreated={({ camera }) => camera.lookAt(0, 2.2, 0)}
+            gl={async (rendererProps) => {
+              const renderer = new THREE.WebGPURenderer({
+                ...(rendererProps as ConstructorParameters<
+                  typeof THREE.WebGPURenderer
+                >[0]),
+                antialias: true,
+                alpha: false,
+              });
+              await renderer.init();
+              renderer.setClearColor("#ffffff", 1);
+              return renderer;
+            }}
           >
             <color attach="background" args={[night ? "#020713" : "#ffffff"]} />
             <AmbientOcclusion />
@@ -420,6 +560,7 @@ export default function WhiteWorld() {
             <GroundShadow />
             <WhiteModelRoom
               airConditionerOn={roomState.airConditionerOn}
+              airflowIntensity={simulation?.airflowIntensity ?? 1}
               ceilingLightOn={roomState.ceilingLightOn}
               deviceState={roomState}
               doorOpen={roomState.doorOpen}

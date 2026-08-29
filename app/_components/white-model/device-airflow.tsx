@@ -12,6 +12,7 @@ type DeviceAirflowProps = {
   nearColor?: string;
   origin: Vector3;
   spread?: Vector3;
+  intensity?: number;
 };
 
 type Strand = {
@@ -133,6 +134,7 @@ export default function DeviceAirflow({
   nearColor = "#fff0bf",
   origin,
   spread = [0.5, 0.12, 0.3],
+  intensity = 1,
 }: DeviceAirflowProps) {
   const strength = useRef(0);
   const colors = useMemo(
@@ -187,9 +189,10 @@ export default function DeviceAirflow({
 
   useFrame(({ camera, clock }, delta) => {
     const animationDelta = Math.min(delta, 1 / 60);
+    const airflowIntensity = THREE.MathUtils.clamp(intensity, 0.45, 1.6);
     strength.current = THREE.MathUtils.damp(
       strength.current,
-      active ? 1 : 0,
+      active ? Math.min(airflowIntensity, 1) : 0,
       active ? 5 : 7,
       animationDelta,
     );
@@ -202,7 +205,9 @@ export default function DeviceAirflow({
     ribbons.forEach((ribbon, index) => {
       const strand = strands[index];
       cycles.current[index] =
-        (cycles.current[index] + animationDelta * strand.speed) % cycleLength;
+        (cycles.current[index] +
+          animationDelta * strand.speed * airflowIntensity) %
+        cycleLength;
       const cycle = cycles.current[index];
       const visible = cycle <= 1;
       const center = THREE.MathUtils.clamp(cycle, 0, 1);

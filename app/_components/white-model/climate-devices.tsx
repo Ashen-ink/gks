@@ -190,12 +190,14 @@ export function FloorHeating({ position }: Pick<DeviceProps, "position">) {
 }
 
 type ClimateDevicesProps = {
+  airflowIntensity: number;
   onToggle: (key: DeviceStateKey) => void;
   selectedDevices: readonly DeviceStateKey[];
   state: RoomState;
 };
 
 export default function ClimateDevices({
+  airflowIntensity,
   onToggle,
   selectedDevices,
   state,
@@ -244,6 +246,7 @@ export default function ClimateDevices({
       ) : null}
       <DeviceAirflow
         active={state.cabinetAirConditionerOn}
+        intensity={airflowIntensity}
         count={8}
         direction={[-3.8, -0.85, 0]}
         farColor="#57aeea"
@@ -253,6 +256,7 @@ export default function ClimateDevices({
       />
       <DeviceAirflow
         active={state.ptcHeaterOn}
+        intensity={airflowIntensity}
         count={7}
         direction={[0, 0.85, -1.85]}
         origin={[-0.85, 0.72, 2.48]}
@@ -260,6 +264,7 @@ export default function ClimateDevices({
       />
       <DeviceAirflow
         active={state.radiantHeaterOn}
+        intensity={airflowIntensity}
         count={7}
         direction={[0, 0.62, -1.65]}
         origin={[-2.05, 1.08, 2.4]}
@@ -267,6 +272,7 @@ export default function ClimateDevices({
       />
       <DeviceAirflow
         active={state.floorHeatingOn}
+        intensity={airflowIntensity}
         count={12}
         direction={[0, 1.55, 0.1]}
         origin={[1.85, 0.13, 0.65]}

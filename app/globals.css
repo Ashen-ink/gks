@@ -122,6 +122,16 @@ body {
   background: rgb(255 255 255 / 94%);
 }
 
+.room-environment-bar nav > button[data-status="loading"] svg {
+  animation: room-simulation-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes room-simulation-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
 .white-world[data-night="true"] .room-environment-bar nav > button {
   background: rgb(255 255 255 / 9%);
 }

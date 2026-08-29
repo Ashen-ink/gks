@@ -4,6 +4,7 @@ import * as THREE from "three";
 
 type AirConditionerAirflowProps = {
   active: boolean;
+  intensity?: number;
 };
 
 type StrandConfig = {
@@ -134,6 +135,7 @@ function updateRibbon(
 
 export default function AirConditionerAirflow({
   active,
+  intensity = 1,
 }: AirConditionerAirflowProps) {
   const strength = useRef(0);
   const cycles = useRef(strands.map((strand) => strand.phase));
@@ -167,9 +169,10 @@ export default function AirConditionerAirflow({
 
   useFrame(({ camera, clock }, delta) => {
     const animationDelta = Math.min(delta, 1 / 60);
+    const airflowIntensity = THREE.MathUtils.clamp(intensity, 0.45, 1.6);
     strength.current = THREE.MathUtils.damp(
       strength.current,
-      active ? 1 : 0,
+      active ? Math.min(airflowIntensity, 1) : 0,
       active ? 5 : 7,
       animationDelta,
     );
@@ -182,7 +185,9 @@ export default function AirConditionerAirflow({
     ribbons.forEach((ribbon, index) => {
       const config = strands[index];
       cycles.current[index] =
-        (cycles.current[index] + animationDelta * config.speed) % cycleLength;
+        (cycles.current[index] +
+          animationDelta * config.speed * airflowIntensity) %
+        cycleLength;
       const cycle = cycles.current[index];
       const visible = cycle <= 1;
       const center = THREE.MathUtils.clamp(cycle, 0, 1);

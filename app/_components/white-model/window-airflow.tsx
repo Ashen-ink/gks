@@ -4,6 +4,7 @@ import * as THREE from "three";
 
 type WindowAirflowProps = {
   crossVentilation: boolean;
+  intensity?: number;
   open: boolean;
 };
 
@@ -148,6 +149,7 @@ function updateRibbon(
 
 export default function WindowAirflow({
   crossVentilation,
+  intensity = 1,
   open,
 }: WindowAirflowProps) {
   const strength = useRef(0);
@@ -184,9 +186,10 @@ export default function WindowAirflow({
 
   useFrame(({ camera, clock }, delta) => {
     const animationDelta = Math.min(delta, 1 / 60);
+    const airflowIntensity = THREE.MathUtils.clamp(intensity, 0.45, 1.6);
     strength.current = THREE.MathUtils.damp(
       strength.current,
-      open ? 1 : 0,
+      open ? Math.min(airflowIntensity, 1) : 0,
       open ? 4.5 : 6,
       animationDelta,
     );
@@ -204,7 +207,9 @@ export default function WindowAirflow({
 
     ribbons.forEach((ribbon, index) => {
       const config = strands[index];
-      const velocity = THREE.MathUtils.lerp(1, 1.9, throughStrength.current);
+      const velocity =
+        THREE.MathUtils.lerp(1, 1.9, throughStrength.current) *
+        airflowIntensity;
       cycles.current[index] =
         (cycles.current[index] +
           animationDelta * config.speed * speedMultiplier * velocity) %
