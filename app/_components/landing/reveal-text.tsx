@@ -4,16 +4,14 @@ import {
   useEffect,
   useRef,
   useState,
-  type CSSProperties,
   type ReactNode,
 } from "react";
 
 type RevealTextProps = {
   children: ReactNode;
-  delay?: number;
 };
 
-export default function RevealText({ children, delay = 0 }: RevealTextProps) {
+export default function RevealText({ children }: RevealTextProps) {
   const element = useRef<HTMLSpanElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -41,7 +39,6 @@ export default function RevealText({ children, delay = 0 }: RevealTextProps) {
       ref={element}
       className="reveal-text"
       data-visible={visible}
-      style={{ "--reveal-delay": `${delay}ms` } as CSSProperties}
     >
       <span className="reveal-text__content">{children}</span>
     </span>

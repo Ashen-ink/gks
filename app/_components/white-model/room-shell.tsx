@@ -11,6 +11,7 @@ import WindowAirflow from "@/app/_components/white-model/window-airflow";
 
 type RoomShellProps = {
   airConditionerOn: boolean;
+  airConditionerSelected: boolean;
   ceilingLightOn: boolean;
   doorOpen: boolean;
   night: boolean;
@@ -79,6 +80,7 @@ function Window({ open, onToggle }: { open: boolean; onToggle: () => void }) {
 
 export default function RoomShell({
   airConditionerOn,
+  airConditionerSelected,
   ceilingLightOn,
   doorOpen,
   night,
@@ -109,6 +111,7 @@ export default function RoomShell({
       />
       <AirConditionerAirflow active={airConditionerOn} />
       <RoomFixtures
+        airConditionerSelected={airConditionerSelected}
         ceilingLightOn={ceilingLightOn}
         doorOpen={doorOpen}
         onAirConditionerToggle={onAirConditionerToggle}

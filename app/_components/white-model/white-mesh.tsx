@@ -19,6 +19,8 @@ type WhiteCylinderProps = {
   rotation?: Vector3;
 };
 
+const disableRaycast = () => undefined;
+
 export function WhiteBox({
   castShadow = true,
   material,
@@ -41,7 +43,7 @@ export function WhiteBox({
           <WhiteModelMaterial />
         )}
       </mesh>
-      <lineSegments>
+      <lineSegments raycast={disableRaycast}>
         <edgesGeometry args={[geometry]} />
         <lineBasicMaterial color="#dcdcdc" />
       </lineSegments>

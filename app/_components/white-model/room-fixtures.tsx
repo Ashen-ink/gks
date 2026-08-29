@@ -11,13 +11,29 @@ import {
   whiteModelCeilingLights,
 } from "@/app/_components/white-model/white-model-material";
 
+type Vector3 = [number, number, number];
+
+export function WallAirConditioner({
+  position,
+  rotation = [0, 0, 0],
+}: {
+  position: Vector3;
+  rotation?: Vector3;
+}) {
+  return (
+    <group position={position} rotation={rotation}>
+      <WhiteBox position={[0, 0, 0]} size={[0.42, 0.78, 2.5]} />
+      <WhiteBox position={[-0.23, -0.23, 0]} size={[0.05, 0.2, 2.15]} />
+      <WhiteBox position={[-0.26, 0.07, -0.68]} size={[0.04, 0.16, 0.42]} />
+      <WhiteBox position={[-0.27, -0.34, 0]} size={[0.04, 0.06, 1.9]} />
+    </group>
+  );
+}
+
 function AirConditioner({ onToggle }: { onToggle: () => void }) {
   return (
     <InteractiveGroup onToggle={onToggle}>
-      <WhiteBox position={[4.72, 3.65, 1.5]} size={[0.42, 0.78, 2.5]} />
-      <WhiteBox position={[4.49, 3.42, 1.5]} size={[0.05, 0.2, 2.15]} />
-      <WhiteBox position={[4.46, 3.72, 0.82]} size={[0.04, 0.16, 0.42]} />
-      <WhiteBox position={[4.45, 3.31, 1.5]} size={[0.04, 0.06, 1.9]} />
+      <WallAirConditioner position={[4.72, 3.65, 1.5]} />
     </InteractiveGroup>
   );
 }
@@ -93,6 +109,7 @@ function CeilingLight({ on, onToggle }: { on: boolean; onToggle: () => void }) {
 }
 
 type RoomFixturesProps = {
+  airConditionerSelected: boolean;
   ceilingLightOn: boolean;
   doorOpen: boolean;
   onAirConditionerToggle: () => void;
@@ -101,6 +118,7 @@ type RoomFixturesProps = {
 };
 
 export default function RoomFixtures({
+  airConditionerSelected,
   ceilingLightOn,
   doorOpen,
   onAirConditionerToggle,
@@ -109,7 +127,9 @@ export default function RoomFixtures({
 }: RoomFixturesProps) {
   return (
     <>
-      <AirConditioner onToggle={onAirConditionerToggle} />
+      {airConditionerSelected ? (
+        <AirConditioner onToggle={onAirConditionerToggle} />
+      ) : null}
       <Door open={doorOpen} onToggle={onDoorToggle} />
       <CeilingLight on={ceilingLightOn} onToggle={onCeilingLightToggle} />
     </>

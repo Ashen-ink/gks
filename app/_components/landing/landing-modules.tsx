@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import IndexShader from "@/app/_components/landing/index-shader";
 import RevealText from "@/app/_components/landing/reveal-text";
 import SensorCube from "@/app/_components/landing/sensor-cube-scene";
@@ -16,26 +16,48 @@ type Module = (typeof modules)[number];
 
 export default function LandingModules() {
   const [activeModule, setActiveModule] = useState<Module>();
+  const [moduleOpen, setModuleOpen] = useState(false);
+  const moduleContent = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!activeModule) {
       return;
     }
 
-    const previousOverflow = document.body.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousRootOverflow = document.documentElement.style.overflow;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setActiveModule(undefined);
+        setModuleOpen(false);
       }
     };
 
     document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
     window.addEventListener("keydown", closeOnEscape);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousRootOverflow;
       window.removeEventListener("keydown", closeOnEscape);
     };
+  }, [activeModule]);
+
+  useEffect(() => {
+    if (!activeModule || moduleOpen) {
+      return;
+    }
+
+    const timeout = window.setTimeout(
+      () => setActiveModule(undefined),
+      850,
+    );
+
+    return () => window.clearTimeout(timeout);
+  }, [activeModule, moduleOpen]);
+
+  useEffect(() => {
+    moduleContent.current?.scrollTo(0, 0);
   }, [activeModule]);
 
   return (
@@ -45,7 +67,10 @@ export default function LandingModules() {
           <button
             className={`landing-index__row landing-index__row--${item.type}`}
             key={item.type}
-            onClick={() => setActiveModule(item)}
+            onClick={() => {
+              setActiveModule(item);
+              setModuleOpen(true);
+            }}
             type="button"
           >
             <RevealText>{item.name}</RevealText>
@@ -66,23 +91,47 @@ export default function LandingModules() {
       </section>
       <section
         className="landing-module-page"
-        data-open={Boolean(activeModule)}
-        aria-hidden={!activeModule}
+        data-state={
+          !activeModule ? "closed" : moduleOpen ? "open" : "closing"
+        }
+        data-native-scroll
+        aria-hidden={!moduleOpen}
+        onWheel={(event) => {
+          if (
+            moduleContent.current &&
+            !moduleContent.current.contains(event.target as Node)
+          ) {
+            moduleContent.current.scrollTop += event.deltaY;
+          }
+        }}
+        onTransitionEnd={(event) => {
+          if (
+            event.target === event.currentTarget &&
+            event.propertyName === "transform" &&
+            !moduleOpen
+          ) {
+            setActiveModule(undefined);
+          }
+        }}
       >
         <button
           className="landing-module-page__close"
           type="button"
           aria-label="关闭"
-          onClick={() => setActiveModule(undefined)}
+          onClick={() => setModuleOpen(false)}
         >
           <svg viewBox="0 0 32 32" aria-hidden="true">
             <path d="M7 7 25 25M25 7 7 25" />
           </svg>
         </button>
         <div className="landing-module-page__heading">
-          <span>{activeModule?.type}</span>
           <h2>{activeModule?.name}</h2>
         </div>
+        <div
+          className="landing-module-page__content"
+          ref={moduleContent}
+          tabIndex={moduleOpen ? 0 : -1}
+        />
       </section>
     </>
   );

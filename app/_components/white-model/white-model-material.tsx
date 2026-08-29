@@ -1,3 +1,4 @@
+import { createContext, useContext, type ReactNode } from "react";
 import * as THREE from "three/webgpu";
 import { lights } from "three/tsl";
 
@@ -109,7 +110,26 @@ export function createWhiteModelMaterial() {
 }
 
 const material = createWhiteModelMaterial();
+const PreviewMaterialContext = createContext(false);
+
+export function WhiteModelPreviewMaterial({ children }: { children: ReactNode }) {
+  return (
+    <PreviewMaterialContext.Provider value>
+      {children}
+    </PreviewMaterialContext.Provider>
+  );
+}
 
 export default function WhiteModelMaterial() {
+  if (useContext(PreviewMaterialContext)) {
+    return (
+      <meshStandardMaterial
+        color="#f7f7f7"
+        metalness={0}
+        roughness={0.88}
+      />
+    );
+  }
+
   return <primitive attach="material" object={material} />;
 }

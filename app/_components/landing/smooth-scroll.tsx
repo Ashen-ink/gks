@@ -40,6 +40,13 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
         return;
       }
 
+      if (
+        event.target instanceof Element &&
+        event.target.closest("[data-native-scroll]")
+      ) {
+        return;
+      }
+
       event.preventDefault();
       const multiplier = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : 1;
       target = Math.min(

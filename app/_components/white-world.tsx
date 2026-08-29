@@ -6,9 +6,12 @@ import * as THREE from "three/webgpu";
 import AmbientOcclusion from "@/app/_components/ambient-occlusion";
 import CameraControls from "@/app/_components/camera-controls";
 import GroundShadow from "@/app/_components/exterior/ground-shadow";
+import RoomFurnitureTable from "@/app/_components/room-furniture-table";
 import WhiteModelRoom from "@/app/_components/white-model-room";
 import {
   defaultRoomState,
+  deviceStateGroups,
+  type DeviceStateKey,
   isRoomState,
   type RoomState,
 } from "@/app/_lib/room-state";
@@ -26,7 +29,11 @@ THREE.setConsoleFunction((type, message, ...parameters) => {
 });
 
 export default function WhiteWorld() {
+  const [furnitureOpen, setFurnitureOpen] = useState(false);
   const [roomState, setRoomState] = useState(defaultRoomState);
+  const [selectedDevices, setSelectedDevices] = useState<
+    readonly DeviceStateKey[]
+  >([]);
   const stateRef = useRef(roomState);
   const localRevision = useRef(0);
   const pendingWrites = useRef(0);
@@ -86,41 +93,76 @@ export default function WhiteWorld() {
     persistState({ [key]: value });
   };
 
+  const selectDevice = (key: DeviceStateKey) => {
+    const patch: Partial<RoomState> = {};
+    const group = deviceStateGroups.find((keys) => keys.includes(key));
+
+    group?.forEach((deviceKey) => {
+      patch[deviceKey] = false;
+    });
+
+    setSelectedDevices((current) => {
+      const selected = current.includes(key);
+      const remaining = group
+        ? current.filter((deviceKey) => !group.includes(deviceKey))
+        : current;
+      return selected ? remaining : [...remaining, key];
+    });
+
+    const state = { ...stateRef.current, ...patch };
+    localRevision.current += 1;
+    stateRef.current = state;
+    setRoomState(state);
+    persistState(patch);
+  };
+
   return (
-    <main className="white-world">
-      <Canvas
-        flat
-        frameloop="demand"
-        shadows
-        camera={{ position: [13, 9, 15], fov: 32, near: 0.1, far: 100 }}
-        onCreated={({ camera }) => camera.lookAt(0, 2.2, 0)}
-        gl={async (rendererProps) => {
-          const renderer = new THREE.WebGPURenderer({
-            ...(rendererProps as ConstructorParameters<typeof THREE.WebGPURenderer>[0]),
-            antialias: true,
-            alpha: false,
-          });
-          await renderer.init();
-          renderer.setClearColor("#ffffff", 1);
-          return renderer;
-        }}
-      >
-        <color attach="background" args={[night ? "#020713" : "#ffffff"]} />
-        <AmbientOcclusion />
-        <CameraControls />
-        <GroundShadow />
-        <WhiteModelRoom
-          airConditionerOn={roomState.airConditionerOn}
-          ceilingLightOn={roomState.ceilingLightOn}
-          doorOpen={roomState.doorOpen}
-          night={night}
-          windowOpen={roomState.windowOpen}
-          onAirConditionerToggle={() => toggleState("airConditionerOn")}
-          onCeilingLightToggle={() => toggleState("ceilingLightOn")}
-          onDoorToggle={() => toggleState("doorOpen")}
-          onWindowToggle={() => toggleState("windowOpen")}
-        />
-      </Canvas>
+    <main className="white-world" data-furniture-open={furnitureOpen}>
+      <div className="white-world__viewport">
+        <Canvas
+          flat
+          frameloop="demand"
+          resize={{ debounce: 0 }}
+          shadows={{ type: THREE.PCFShadowMap }}
+          camera={{ position: [13, 9, 15], fov: 32, near: 0.1, far: 100 }}
+          onCreated={({ camera }) => camera.lookAt(0, 2.2, 0)}
+          gl={async (rendererProps) => {
+            const renderer = new THREE.WebGPURenderer({
+              ...(rendererProps as ConstructorParameters<typeof THREE.WebGPURenderer>[0]),
+              antialias: true,
+              alpha: false,
+            });
+            await renderer.init();
+            renderer.setClearColor("#ffffff", 1);
+            return renderer;
+          }}
+        >
+          <color attach="background" args={[night ? "#020713" : "#ffffff"]} />
+          <AmbientOcclusion />
+          <CameraControls />
+          <GroundShadow />
+          <WhiteModelRoom
+            airConditionerOn={roomState.airConditionerOn}
+            ceilingLightOn={roomState.ceilingLightOn}
+            deviceState={roomState}
+            doorOpen={roomState.doorOpen}
+            night={night}
+            selectedDevices={selectedDevices}
+            windowOpen={roomState.windowOpen}
+            onAirConditionerToggle={() => toggleState("airConditionerOn")}
+            onCeilingLightToggle={() => toggleState("ceilingLightOn")}
+            onDeviceToggle={(key) => toggleState(key)}
+            onDoorToggle={() => toggleState("doorOpen")}
+            onWindowToggle={() => toggleState("windowOpen")}
+          />
+        </Canvas>
+      </div>
+      <RoomFurnitureTable
+        open={furnitureOpen}
+        onOpenChange={setFurnitureOpen}
+        selectedDevices={selectedDevices}
+        onSelect={selectDevice}
+      />
     </main>
   );
 }
