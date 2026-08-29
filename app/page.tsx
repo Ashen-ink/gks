@@ -12,7 +12,7 @@ import styles from "@/app/_components/landing/landing.module.css";
 export const metadata: Metadata = {
   title: "常宁居｜贵州避暑房微气候调控",
   description:
-    "让房子结合温度、湿度、风、降水与居住时相，判断此刻更适合开窗、除湿，还是开空调。",
+    "根据房间温湿度、门窗状态和短时天气，判断何时开窗、除湿或开空调。",
 };
 
 function ArrowIcon() {
@@ -36,11 +36,11 @@ export default function HomePage() {
         </a>
         <nav aria-label="首页导航">
           <a href="#problem">问题</a>
-          <a href="#logic">逻辑</a>
-          <a href="#dimensions">四维</a>
+          <a href="#logic">怎么判断</a>
+          <a href="#dimensions">四项</a>
         </nav>
         <Link className={styles.headerCta} href="/room">
-          <span>进入空间</span>
+          <span>查看房间</span>
           <ArrowIcon />
         </Link>
       </header>
@@ -70,29 +70,30 @@ export default function HomePage() {
         </h1>
         <div className={styles.heroBottom}>
           <p>
-            让房子自己判断
+            开窗、除湿，还是开空调。
             <br />
-            该开窗、除湿，还是开空调。
+            房子先看天气和室内，再做决定。
           </p>
           <a className={styles.scrollCue} href="#problem">
-            <span>向下理解问题</span>
+            <span>先看夏夜数据</span>
             <span aria-hidden="true">↓</span>
           </a>
         </div>
       </section>
 
       <section className={styles.problemIntro} id="problem">
-        <p className={styles.problemLead}>问题从一扇窗开始。</p>
+        <p className={styles.problemLead}>贵州九个市州的夏夜</p>
         <h2 className={styles.problemTitle}>
-          <span>贵州最凉的时候，</span>
-          <span>也最潮。</span>
+          <span>夜里已经够凉，</span>
+          <span>空气还是很潮。</span>
         </h2>
         <div className={styles.problemCopy}>
           <p>
-            凉，是贵州的优势。潮，是这份凉爽的代价。风能带来免费的冷量，也可能把水汽送进卧室。
+            安顺夏季夜间均温约 19.8°C。九个市州的夜间相对湿度都在
+            83%—94%。这类房子的持续制冷需求很低，除湿出现得更频繁。
           </p>
           <p>
-            温度已经合适时，继续制冷不是答案；人在睡着时，让人反复切换设备也不是答案。
+            窗外凉时，可以先开窗。雨快到了，或者外面更潮，窗就该关上。温度说明冷暖，降雨和含湿量说明开窗后的水汽负担。
           </p>
         </div>
       </section>
@@ -120,13 +121,21 @@ export default function HomePage() {
                     ))}
                   </h2>
                   <p>{chapter.body}</p>
+                  <a
+                    className={styles.chapterMore}
+                    href="#logic"
+                    aria-label={`查看更多：${chapter.title.join("")}`}
+                  >
+                    <span>查看更多</span>
+                    <ArrowIcon />
+                  </a>
                 </div>
                 <div className={styles.metricBlock}>
                   <strong>{chapter.metric}</strong>
                   <span>{chapter.metricLabel}</span>
                 </div>
                 <p className={styles.chapterEvidence}>
-                  <span>数据事实</span>
+                  <span>数据口径</span>
                   {chapter.evidence}
                 </p>
               </div>
@@ -137,26 +146,24 @@ export default function HomePage() {
 
       <section className={styles.manifesto} aria-labelledby="conflict-title">
         <h2 id="conflict-title">
-          <span>开窗，带来免费的冷量。</span>
-          <span>也可能，把湿气灌进屋。</span>
-          <span className={styles.manifestoTurn}>问题不是二选一。</span>
-          <span>问题是下一小时，房间会变成什么样。</span>
+          <span>一扇窗，昨晚带走热，</span>
+          <span>今晚可能带进水汽。</span>
+          <span className={styles.manifestoTurn}>门窗位置、风向和降雨预报，</span>
+          <span>决定它此刻该开还是该关。</span>
         </h2>
         <p>
-          一扇窗，同时改变温度与水汽。
-          <br />
-          它不是开关，而是一条需要被计算的边界。
+          模型按房间计算热和水汽怎样流动。每次执行一个动作，收到新数据后再算下一次。
         </p>
       </section>
 
       <section className={styles.decision} id="logic">
         <div className={styles.decisionIntro}>
-          <h2>房子先算后果，再选动作。</h2>
+          <h2>把开窗、除湿和空调放在一起算。</h2>
           <p>
-            把房间视为节点、门窗视为边；依据质量、能量与水汽守恒，推演候选动作带来的室内轨迹。
+            模型依据质量、能量和水汽守恒，分别预测几种动作之后，每个房间的温度和含湿量。
           </p>
           <p className={styles.decisionNote}>
-            当前为白盒物理仿真与滚动优化主环，不代表整屋硬件已经完成部署。
+            这里展示安顺基准户型的物理仿真。整屋硬件仍处在部署阶段。
           </p>
         </div>
         <ol className={styles.decisionSteps}>
@@ -171,27 +178,11 @@ export default function HomePage() {
         </ol>
       </section>
 
-      <section className={styles.dimensionsIntro} id="dimensions">
-        <div className={styles.dimensionHeadline}>
-          <h2>四个维度，完成一次判断。</h2>
-        </div>
-        <p className={styles.dimensionsCopy}>
-          传感说明房子正在发生什么；风向说明外界会怎样改变它；环境说明这一季要守住什么；姿态说明这个时刻，对人而言什么才算合适。
-        </p>
-        <div className={styles.formula} aria-label="判断模型的四个输入">
-          {["房间状态", "气象边界", "设备能力", "居住时相"].map((label) => (
-            <div key={label}>
-              <strong>{label}</strong>
-            </div>
-          ))}
-        </div>
-      </section>
-
       <QuadrantExplorer />
 
       <section className={styles.evidence} aria-labelledby="evidence-title">
         <div className={styles.evidenceHeading}>
-          <h2 id="evidence-title">把已经做到的，与仍要验证的，清楚地分开。</h2>
+          <h2 id="evidence-title">这些数字从哪里来，做到哪一步。</h2>
         </div>
         <div className={styles.evidenceList}>
           {evidenceLegend.map((item) => (
@@ -216,13 +207,13 @@ export default function HomePage() {
         <div className={styles.closingTint} aria-hidden="true" />
         <div className={styles.closingContent}>
           <h2>
-            让房子自己判断，
+            遥控器，
             <br />
-            让人只负责生活。
+            可以留在抽屉里。
           </h2>
-          <p>常宁居不是再增加一个控制面板，而是减少一个需要被记住的系统。</p>
+          <p>天气变化后，房子重算下一步。住户手动操作，自动控制立即暂停。</p>
           <Link href="/room" className={styles.closingCta}>
-            <span>进入空间</span>
+            <span>查看房间模拟</span>
             <ArrowIcon />
           </Link>
         </div>

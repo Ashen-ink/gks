@@ -15,9 +15,7 @@ type QuadrantKey = "sensor" | "wind" | "environment" | "pose";
 
 type Quadrant = {
   key: QuadrantKey;
-  index: string;
   name: string;
-  englishName: string;
   eyebrow: string;
   statement: string;
   detail: string;
@@ -32,127 +30,119 @@ type Quadrant = {
 const quadrants: Quadrant[] = [
   {
     key: "sensor",
-    index: "01",
     name: "传感",
-    englishName: "SENSE",
-    eyebrow: "房间状态",
-    statement: "先让房子看见自己的状态。",
+    eyebrow: "每间房，分开看",
+    statement: "卧室和客厅，需要分别测温。",
     detail:
-      "整套住宅不是一个温度值。每个房间的温湿度、门窗状态、占用情况与窗边风况，共同构成可计算的居住现场。",
+      "每个房间的体感各有差异。温湿度、门窗和占用按房间读取，窗边的风速风向用来校正实际换气量。",
     points: [
       {
-        title: "房间级状态",
+        title: "每间房分别测",
         description:
-          "持续观察各空间的温度、相对湿度与门窗状态，保留卧室、客厅之间真实存在的差异。",
+          "卧室、客厅分别保留温湿度数据，模型以房间为单位计算。",
       },
       {
-        title: "窗口边界",
+        title: "门窗状态",
         description:
-          "同时比较室内外条件与窗口风况，不把“开窗”预设为恒定收益。",
+          "门窗磁记录开闭。窗口风速风向说明空气从哪里进、进了多少。",
       },
       {
-        title: "非侵入占用",
+        title: "房间占用",
         description:
-          "只判断空间是否正在被使用，让舒适目标跟随生活，而不是建立个人身份画像。",
+          "占用信号记录房间的使用状态，供温湿度目标调整。",
       },
     ],
     current:
-      "以温湿度、门窗与占用状态作为基础输入；关键传感缺失时，系统回退到更保守的策略。",
+      "当前版本按房间计算温度、含湿量和换气量。关键传感缺失时，控制动作会收紧。",
     caveat:
-      "占用感知用于改变房间目标，不等同于人物识别、行为分析或居住监控。",
+      "占用采用匿名存在检测，数据范围限于房间使用状态。",
   },
   {
     key: "wind",
-    index: "02",
     name: "风向",
-    englishName: "AIRFLOW",
-    eyebrow: "气流拓扑",
-    statement: "把风从天气现象，变成可调用的免费冷源。",
+    eyebrow: "风从哪里进，往哪里走",
+    statement: "开窗后的换气量，取决于完整气流路径。",
     detail:
-      "自然通风的价值不只取决于室外是否凉爽，还取决于风从哪里进入、如何穿过房间，以及它同时带来了多少水汽。",
+      "单侧开窗和穿堂风是两种工况。门窗位置和室外来流先决定风能走多远，再由含湿量算进屋的水汽。",
     points: [
       {
-        title: "预报前置",
+        title: "先看窗边的风",
         description:
-          "把短时天气预报放进决策，让房子为即将发生的升温、降雨或风向变化提前准备。",
+          "窗口风速风向给出实际边界，比气象站里的室外风更接近这套房。",
       },
       {
-        title: "多区连通",
+        title: "再看门窗的路",
         description:
-          "根据门窗关系和房间连接方式寻找有效路径，而不是假设打开任意一扇窗都能形成穿堂风。",
+          "模型沿着门、窗和房间的连接关系计算气流。单侧开窗形成局部换气，门窗连通后才可能出现穿堂风。",
       },
       {
-        title: "驱动力判断",
+        title: "把下一场雨算进去",
         description:
-          "综合风压与热浮力估计通风潜力，再决定这阵风是否值得被引入室内。",
+          "短时预报提供降雨、风向和温湿度变化，开窗时机随之调整。",
       },
     ],
     current:
-      "核心判断来自物理模型与滚动优化：先预测，再在每个决策周期重新校正。",
+      "当前使用多房间气流网络计算路径。窗口传感器在线时，实测流量会修正计算结果。",
     caveat:
-      "强风、降雨与室外高含湿量会压低开窗优先级；窗户在不同配置中可能是建议动作，而非自动执行。",
+      "手动窗输出开窗建议，电动窗可进入自动控制。强风、降雨或室外高含湿量会关闭开窗选项。",
   },
   {
     key: "environment",
-    index: "03",
     name: "环境",
-    englishName: "CLIMATE",
-    eyebrow: "温湿边界",
-    statement: "在贵州，温度够低，不代表环境已经舒适。",
+    eyebrow: "温度和水汽，两本账",
+    statement: "贵州的夏夜，低温常常和高湿一起出现。",
     detail:
-      "系统同时计算温度与水汽：既利用凉爽室外空气，也避免在潮湿夜间或降雨时，把新的湿负荷带进房间。",
+      "模型同时算温度和含湿量。室外空气合适时，用它给房间降温。夜里太潮或正在下雨，窗会保持关闭。",
     points: [
       {
-        title: "温湿同算",
+        title: "用含湿量算水汽",
         description:
-          "内部优化以空气含湿量描述水汽状态，界面仍使用更容易理解的相对湿度呈现结果。",
+          "计算使用含湿量，界面仍显示更熟悉的相对湿度。降温和除湿由此拆成两项动作。",
       },
       {
-        title: "天气边界",
+        title: "下雨时关闭开窗选项",
         description:
-          "降雨、太阳辐射与昼夜变化共同参与判断，避免只看一个室外温度就决定通风。",
+          "降雨会直接关闭开窗选项。太阳、昼夜变化和室外湿度也会进入计算。",
       },
       {
-        title: "全年三态",
+        title: "季节变了，目标也变",
         description:
-          "避暑季、冬季与长期空置分别采用不同目标：纳凉、防冷风，以及无人时的防潮防霉。",
+          "夏天处理凉而潮，冬天减少冷风和供暖损失，长期空置时控制湿度和霉变风险。",
       },
     ],
     current:
-      "避暑季优先利用自然冷源，并把独立除湿视为与制冷不同的问题；全年策略随季节和占用切换。",
+      "当前会把自然通风、独立除湿和空调分开试算，再选对温湿度影响更合适的一项。",
     caveat:
-      "“凉”与“干爽”是两个目标。潮湿夜晚即使温度宜人，也不应被简单判断为适合持续开窗。",
+      "区域气象数据只能给出策略方向。具体开窗条件和设备响应，还要在真实房屋里标定。",
   },
   {
     key: "pose",
-    index: "04",
-    name: "姿态",
-    englishName: "OCCUPANCY",
-    eyebrow: "居住节律",
-    statement: "同一间房，在入睡、离家和手动接管时，不应追逐同一个目标。",
+    name: "居住",
+    eyebrow: "在住 / 睡眠 / 空置",
+    statement: "人睡着后，房子会减少设备切换。",
     detail:
-      "“姿态”描述人与房子的关系：有人还是无人、清醒还是入睡、短暂离开还是长期空置，以及居住者是否正在主动操作。",
+      "在室、入睡、短暂离开和长期空置，各有一套温湿度目标。住户手动操作时，自动控制立即让位。",
     points: [
       {
-        title: "情境目标",
+        title: "人在房间里",
         description:
-          "根据在室、睡眠与离家状态调整舒适边界，减少无意义的设备运行与不合时宜的提醒。",
+          "控制先看体感和空气质量，设备运行集中在确有收益的时段。",
       },
       {
-        title: "长期空置",
+        title: "人已经睡着",
         description:
-          "当住宅数月无人使用，目标从即时体感转向稳定湿度、降低霉变风险并保持低干预运行。",
+          "夜里收紧启停频率，同时压低噪声和提醒次数。",
       },
       {
-        title: "人工优先",
+        title: "房子空着几个月",
         description:
-          "任何手动操作都被视为明确意图；系统退后观察，并在合适时机恢复辅助，而不是争夺控制权。",
+          "长期空置把目标切换到湿度和霉变风险，并尽量少开设备。",
       },
     ],
     current:
-      "规则与先验偏好共同调整舒适目标；个体偏好学习仍是路线图，不替代住宅的物理约束。",
+      "当前先用明确规则切换居住状态。个体偏好学习处于后续阶段。",
     caveat:
-      "这里的“姿态”不是摄像识别。常宁居追求的最终状态，是居住者不必意识到系统正在工作。",
+      "居住状态由匿名占用信号和时间规则判定，人可随时手动接管。",
   },
 ];
 
@@ -228,13 +218,16 @@ export default function QuadrantExplorer() {
   }, [activeKey]);
 
   return (
-    <section className={styles.explorer} aria-labelledby="quadrant-title">
+    <section
+      className={styles.explorer}
+      id="dimensions"
+      aria-labelledby="quadrant-title"
+    >
       <div className={styles.intro}>
-        <p className={styles.kicker}>06 / FOUR INPUTS</p>
         <div className={styles.introCopy}>
-          <h2 id="quadrant-title">四个维度，串成一条判断链。</h2>
+          <h2 id="quadrant-title">房子每次要看四件事。</h2>
           <p>
-            传感建立事实，风向判断路径，环境确认边界，姿态定义目标。四者在同一决策周期内互相约束，最终回答“此刻最少需要做什么”，而不是简单决定“该开哪台设备”。
+            每一轮都读取四组数据。各房间的温湿度、窗边的风、室外降雨，以及房屋当前的使用状态。算完这些，再选下一步。
           </p>
         </div>
       </div>
@@ -253,10 +246,6 @@ export default function QuadrantExplorer() {
                 setActiveKey(quadrant.key);
               }}
             >
-              <span className={styles.cardMeta}>
-                <span>{quadrant.index}</span>
-                <span>{quadrant.englishName}</span>
-              </span>
               <QuadrantVisual type={quadrant.key} />
               <span className={styles.cardCopy}>
                 <span className={styles.cardEyebrow}>{quadrant.eyebrow}</span>
@@ -264,7 +253,7 @@ export default function QuadrantExplorer() {
                 <span className={styles.cardStatement}>{quadrant.statement}</span>
               </span>
               <span className={styles.cardAction} aria-hidden="true">
-                <span>展开逻辑</span>
+                <span>查看详情</span>
                 <svg viewBox="0 0 28 28">
                   <path d="M5 23 23 5M10 5h13v13" />
                 </svg>
@@ -315,10 +304,7 @@ export default function QuadrantExplorer() {
       >
         <div className={styles.dialogShell}>
           <header className={styles.dialogBar}>
-            <span>常宁居 / 四维决策</span>
-            <span>
-              {activeQuadrant.index} — {activeQuadrant.englishName}
-            </span>
+            <span>常宁居 · 四项判断依据</span>
             <button
               className={styles.closeButton}
               type="button"
@@ -335,12 +321,10 @@ export default function QuadrantExplorer() {
           <div className={styles.dialogHero}>
             <div className={styles.dialogVisual}>
               <QuadrantVisual type={activeQuadrant.key} />
-              <span className={styles.dialogIndex}>{activeQuadrant.index}</span>
             </div>
             <div className={styles.dialogHeading}>
               <p>{activeQuadrant.eyebrow}</p>
               <h2 id={`${dialogId}-title`}>{activeQuadrant.name}</h2>
-              <span>{activeQuadrant.englishName}</span>
             </div>
           </div>
 
@@ -353,9 +337,8 @@ export default function QuadrantExplorer() {
             </div>
 
             <ol className={styles.pointList}>
-              {activeQuadrant.points.map((point, index) => (
+              {activeQuadrant.points.map((point) => (
                 <li key={point.title}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
                   <div>
                     <h3>{point.title}</h3>
                     <p>{point.description}</p>
@@ -367,15 +350,15 @@ export default function QuadrantExplorer() {
 
           <footer className={styles.statusGrid}>
             <div>
-              <p>现阶段 / CURRENT</p>
+              <p>目前做到</p>
               <strong>{activeQuadrant.current}</strong>
             </div>
             <div>
-              <p>边界 / CAVEAT</p>
+              <p>还要注意</p>
               <strong>{activeQuadrant.caveat}</strong>
             </div>
             <button type="button" onClick={closeDialog}>
-              返回四维视图
+              返回四项
               <svg viewBox="0 0 28 28" aria-hidden="true">
                 <path d="M23 14H5m7-7-7 7 7 7" />
               </svg>

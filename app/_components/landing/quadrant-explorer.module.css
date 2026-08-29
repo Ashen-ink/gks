@@ -7,7 +7,12 @@
   margin-right: 0;
   color: var(--ink);
   background: var(--paper);
-  font-family: Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family:
+    var(--font-space-mono),
+    "PingFang SC",
+    "Hiragino Sans GB",
+    "Microsoft YaHei",
+    sans-serif;
 }
 
 .intro {
@@ -20,14 +25,8 @@
   border-bottom: 1px solid var(--ink);
 }
 
-.kicker {
-  margin: 0;
-  font-size: 0.68rem;
-  line-height: 1;
-  letter-spacing: 0.12em;
-}
-
 .introCopy {
+  grid-column: 2;
   display: grid;
   align-content: space-between;
   gap: 4rem;
@@ -82,7 +81,7 @@
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: 1fr;
   width: 100%;
   min-height: clamp(30rem, 52vw, 47rem);
   padding: clamp(1.1rem, 2.25vw, 2.25rem);
@@ -116,14 +115,6 @@
 .statusGrid button:focus-visible {
   outline: 3px solid currentColor;
   outline-offset: -5px;
-}
-
-.cardMeta {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.69rem;
-  line-height: 1;
-  letter-spacing: 0.12em;
 }
 
 .cardCopy {
@@ -394,7 +385,7 @@
 }
 
 .dialog {
-  --accent: #b9f24a;
+  --accent: #b9cba8;
   inset: 0;
   width: 100%;
   max-width: none;
@@ -411,15 +402,15 @@
 }
 
 .dialog[data-active="wind"] {
-  --accent: #9bcdf0;
+  --accent: #b9d1d5;
 }
 
 .dialog[data-active="environment"] {
-  --accent: #ff6b31;
+  --accent: #d4b18d;
 }
 
 .dialog[data-active="pose"] {
-  --accent: #c3b4ed;
+  --accent: #c7c4ba;
 }
 
 .dialog[open] {
@@ -441,7 +432,7 @@
   top: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: 1fr auto;
   gap: 1rem;
   align-items: center;
   min-height: 3.5rem;
@@ -499,23 +490,13 @@
   transform: translate(50%, -50%) rotate(-8deg);
 }
 
-.dialogIndex {
-  position: absolute;
-  right: 1.5rem;
-  bottom: 1.25rem;
-  color: #11120f;
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-}
-
 .dialogHeading {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr;
   padding: clamp(1.5rem, 3.5vw, 3.5rem);
 }
 
-.dialogHeading p,
-.dialogHeading > span {
+.dialogHeading p {
   margin: 0;
   font-size: 0.7rem;
   letter-spacing: 0.12em;
@@ -529,10 +510,6 @@
   line-height: 0.72;
   letter-spacing: -0.14em;
   white-space: nowrap;
-}
-
-.dialogHeading > span {
-  justify-self: end;
 }
 
 .dialogBody {
@@ -577,8 +554,7 @@
 
 .pointList li {
   display: grid;
-  grid-template-columns: 3.25rem 1fr;
-  gap: 1rem;
+  grid-template-columns: 1fr;
   min-height: calc(58svh / 3);
   padding: clamp(1.5rem, 3vw, 3.25rem);
   border-bottom: 1px solid rgba(241, 239, 231, 0.3);
@@ -586,12 +562,6 @@
 
 .pointList li:last-child {
   border-bottom: 0;
-}
-
-.pointList li > span {
-  color: var(--accent);
-  font-size: 0.7rem;
-  letter-spacing: 0.12em;
 }
 
 .pointList h3 {
@@ -669,6 +639,7 @@
   }
 
   .introCopy {
+    grid-column: 1;
     gap: 5rem;
   }
 
@@ -722,14 +693,14 @@
 
 @media (max-width: 640px) {
   .intro {
-    gap: 4rem;
-    min-height: 72svh;
-    padding: 1.2rem;
+    gap: 0;
+    min-height: auto;
+    padding: 5rem 1.2rem 4rem;
   }
 
   .introCopy {
     align-content: space-between;
-    gap: 6rem;
+    gap: 4rem;
   }
 
   .introCopy h2 {
@@ -782,10 +753,6 @@
     padding: 0 0.85rem;
   }
 
-  .dialogBar > span:nth-child(2) {
-    display: none;
-  }
-
   .dialogVisual {
     min-height: 52svh;
   }
@@ -815,7 +782,7 @@
   }
 
   .pointList li {
-    grid-template-columns: 2rem 1fr;
+    grid-template-columns: 1fr;
     min-height: 15rem;
     padding: 1.25rem;
   }

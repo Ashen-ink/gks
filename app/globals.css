@@ -8,6 +8,12 @@ body {
   min-height: 100%;
   margin: 0;
   background: #fff;
+  font-family:
+    var(--font-space-mono),
+    "PingFang SC",
+    "Hiragino Sans GB",
+    "Microsoft YaHei",
+    sans-serif;
 }
 
 .white-world {
