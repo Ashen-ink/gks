@@ -304,18 +304,25 @@ body {
 
 .room-timeline__rail {
   display: flex;
-  width: clamp(78px, 6.4vw, 92px);
-  flex: 0 0 clamp(78px, 6.4vw, 92px);
+  width: clamp(112px, 8.6vw, 132px);
+  flex: 0 0 clamp(112px, 8.6vw, 132px);
   flex-direction: column;
+  align-items: stretch;
+  padding: 12px 12px 16px;
+  border-radius: 28px;
+}
+
+.room-timeline__rail-header {
+  display: flex;
+  min-height: 32px;
   align-items: center;
-  gap: 7px;
-  padding: 11px 10px 16px;
-  border-radius: 30px;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .room-timeline__toggle {
   display: grid;
-  width: 36px;
+  width: 30px;
   aspect-ratio: 1;
   flex: 0 0 auto;
   padding: 0;
@@ -344,7 +351,7 @@ body {
 }
 
 .room-timeline__toggle svg {
-  width: 15px;
+  width: 13px;
   transition: transform 500ms cubic-bezier(0.76, 0, 0.24, 1);
 }
 
@@ -359,60 +366,150 @@ body {
 }
 
 .room-timeline__current {
-  margin-top: 2px;
-  font-size: clamp(15px, 1.3vw, 18px);
+  font-size: 11px;
   font-weight: 400;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.02em;
   line-height: 1;
 }
 
 .room-timeline__phase {
-  max-width: 100%;
+  align-self: flex-start;
+  max-width: calc(100% - 12px);
+  margin: 5px 6px 8px;
   overflow: hidden;
   font-size: 9px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   line-height: 1;
-  opacity: 0.48;
+  opacity: 0.42;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .room-timeline__track {
   position: relative;
-  width: 34px;
+  width: 100%;
   height: var(--timeline-track-length);
   flex: 0 1 var(--timeline-track-length);
-  margin: 4px 0;
+  min-height: 120px;
+  margin: 12px 0 7px;
 }
 
-.room-timeline__track::before,
-.room-timeline__track::after {
+.room-timeline__scale {
   position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 8px;
-  border-radius: 999px;
-  content: "";
+  inset: 0;
   pointer-events: none;
-  transform: translateX(-50%);
 }
 
-.room-timeline__track::before {
-  height: 100%;
-  background: rgb(17 17 17 / 13%);
+.room-timeline__scale::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 22px;
+  width: 1px;
+  background: rgb(17 17 17 / 22%);
+  content: "";
 }
 
-.room-timeline__track::after {
-  height: var(--timeline-progress);
+.white-world[data-night="true"] .room-timeline__scale::before {
+  background: rgb(255 255 255 / 24%);
+}
+
+.room-timeline__tick {
+  --timeline-position: 0%;
+  position: absolute;
+  top: var(--timeline-position);
+  right: 0;
+  left: 18px;
+  height: 1px;
+  transform: translateY(-50%);
+}
+
+.room-timeline__tick::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 9px;
+  border-top: 1px solid currentColor;
+  content: "";
+  opacity: 0.34;
+}
+
+.room-timeline__tick[data-edge="true"]::before {
+  width: 14px;
+  opacity: 0.62;
+}
+
+.room-timeline__tick small {
+  position: absolute;
+  top: 0;
+  left: 22px;
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  opacity: 0.34;
+  transform: translateY(-50%);
+}
+
+.room-timeline__marker {
+  --timeline-position: 0%;
+  position: absolute;
+  top: var(--timeline-position);
+  left: 18.5px;
+  z-index: 1;
+  width: 8px;
+  height: 8px;
+  border: 2px solid rgb(255 255 255 / 90%);
+  border-radius: 50%;
+  background: #1769ff;
+  box-shadow: 0 0 0 1px rgb(23 105 255 / 24%);
+  transform: translateY(-50%);
+}
+
+.white-world[data-night="true"] .room-timeline__marker {
+  border-color: rgb(4 8 17 / 90%);
+  background: #72a4ff;
+}
+
+.room-timeline__cursor {
+  position: absolute;
+  top: var(--timeline-progress);
+  right: 0;
+  left: 7px;
+  z-index: 2;
+  display: flex;
+  height: 30px;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 10px 0 34px;
+  border-radius: 10px;
   background: #111;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 16%);
+  color: #fff;
+  transform: translateY(-50%);
 }
 
-.white-world[data-night="true"] .room-timeline__track::before {
-  background: rgb(255 255 255 / 14%);
-}
-
-.white-world[data-night="true"] .room-timeline__track::after {
+.room-timeline__cursor::before {
+  position: absolute;
+  left: 12px;
+  width: 6px;
+  height: 6px;
+  border: 2px solid #111;
+  border-radius: 50%;
   background: #fff;
+  content: "";
+}
+
+.white-world[data-night="true"] .room-timeline__cursor {
+  background: #fff;
+  box-shadow: 0 8px 22px rgb(0 0 0 / 32%);
+  color: #07101f;
+}
+
+.white-world[data-night="true"] .room-timeline__cursor::before {
+  border-color: #fff;
+  background: #07101f;
 }
 
 .room-timeline__track input {
@@ -421,83 +518,55 @@ body {
   left: 50%;
   z-index: 1;
   width: var(--timeline-track-length);
-  height: 34px;
+  height: 100px;
   margin: 0;
   appearance: none;
   background: transparent;
   cursor: ns-resize;
   outline: 0;
-  transform: translate(-50%, -50%) rotate(-90deg);
+  transform: translate(-50%, -50%) rotate(90deg);
 }
 
 .room-timeline__track input::-webkit-slider-runnable-track {
-  height: 8px;
-  border-radius: 999px;
+  height: 1px;
   background: transparent;
 }
 
 .room-timeline__track input::-webkit-slider-thumb {
-  width: 20px;
-  height: 20px;
-  margin-top: -6px;
+  width: 30px;
+  height: 100px;
+  margin-top: -50px;
   appearance: none;
-  border: 2px solid #111;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow:
-    0 0 0 4px rgb(255 255 255 / 76%),
-    0 5px 13px rgb(0 0 0 / 18%);
-}
-
-.white-world[data-night="true"]
-  .room-timeline__track
-  input::-webkit-slider-thumb {
-  border-color: #fff;
-  background: #090e19;
-  box-shadow:
-    0 0 0 4px rgb(4 8 17 / 72%),
-    0 5px 15px rgb(0 0 0 / 34%);
+  border: 0;
+  background: transparent;
 }
 
 .room-timeline__track input::-moz-range-track {
-  height: 8px;
+  height: 1px;
   border: 0;
-  border-radius: 999px;
   background: transparent;
 }
 
 .room-timeline__track input::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border: 2px solid #111;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow:
-    0 0 0 4px rgb(255 255 255 / 76%),
-    0 5px 13px rgb(0 0 0 / 18%);
-}
-
-.white-world[data-night="true"]
-  .room-timeline__track
-  input::-moz-range-thumb {
-  border-color: #fff;
-  background: #090e19;
-  box-shadow:
-    0 0 0 4px rgb(4 8 17 / 72%),
-    0 5px 15px rgb(0 0 0 / 34%);
+  width: 30px;
+  height: 100px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .room-timeline__date {
-  font-size: 9px;
-  letter-spacing: 0.08em;
+  padding-left: 6px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
   line-height: 1;
-  opacity: 0.46;
+  opacity: 0.54;
 }
 
 .room-timeline__events {
   display: flex;
-  width: min(390px, calc(100vw - 144px));
-  min-width: min(390px, calc(100vw - 144px));
+  width: min(390px, calc(100vw - 188px));
+  min-width: min(390px, calc(100vw - 188px));
   flex-direction: column;
   overflow: hidden;
   border-radius: 30px;
@@ -544,9 +613,18 @@ body {
 }
 
 .room-timeline__events-header > :first-child {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
   font-size: 15px;
   font-weight: 400;
   letter-spacing: 0.02em;
+}
+
+.room-timeline__events-header small {
+  font-size: 9px;
+  font-weight: 400;
+  opacity: 0.42;
 }
 
 .room-timeline__events-header > :last-child {
@@ -623,6 +701,13 @@ body {
   opacity: 0.62;
 }
 
+.room-timeline__empty {
+  margin: 0;
+  padding: 24px 22px;
+  font-size: 11px;
+  opacity: 0.44;
+}
+
 @media (max-width: 640px) {
   .room-environment-bar nav {
     justify-content: flex-start;
@@ -655,9 +740,9 @@ body {
   }
 
   .room-timeline__rail {
-    width: 62px;
-    flex-basis: 62px;
-    padding: 9px 7px 13px;
+    width: 94px;
+    flex-basis: 94px;
+    padding: 9px 9px 13px;
     border-radius: 23px;
   }
 
@@ -667,17 +752,17 @@ body {
   }
 
   .room-timeline__events {
-    width: min(290px, calc(100vw - 84px));
-    min-width: min(290px, calc(100vw - 84px));
+    width: min(270px, calc(100vw - 116px));
+    min-width: min(270px, calc(100vw - 116px));
     border-radius: 23px;
   }
 
   .room-timeline__toggle {
-    width: 32px;
+    width: 28px;
   }
 
   .room-timeline__current {
-    font-size: 14px;
+    font-size: 10px;
   }
 
   .room-timeline__events-header {

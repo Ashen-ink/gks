@@ -32,15 +32,17 @@ shadowTexture.magFilter = THREE.LinearFilter;
 shadowTexture.minFilter = THREE.LinearFilter;
 shadowTexture.needsUpdate = true;
 
-export default function GroundShadow() {
+export default function GroundShadow({ daylight }: { daylight: number }) {
+  const shade = Math.round(119 * daylight);
+
   return (
     <mesh position={[0, -0.052, 0]} rotation={[-Math.PI / 2, 0, 0]}>
       <planeGeometry args={[18, 18]} />
       <meshBasicMaterial
         alphaMap={shadowTexture}
-        color="#777777"
+        color={shade * 0x010101}
         depthWrite={false}
-        opacity={0.28}
+        opacity={0.06 + daylight * 0.22}
         toneMapped={false}
         transparent
       />
