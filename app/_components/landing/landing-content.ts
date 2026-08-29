@@ -91,17 +91,17 @@ export const imageCredits = [
   },
   {
     use: "冷静房间",
-    author: "Takashi Sakamoto",
-    href: "https://unsplash.com/photos/sunlight-streams-into-an-empty-dimly-lit-room-JQIH5eLRkCM",
+    author: "Zahraa Hassan",
+    href: "https://unsplash.com/photos/sunlight-streams-onto-a-rumpled-bed-through-a-window-4ti8uDIv8MQ",
   },
   {
     use: "玻璃凝露",
-    author: "Cai Fang",
-    href: "https://unsplash.com/photos/condensation-droplets-on-a-dark-surface-K3eJuD4BnZM",
+    author: "همَّام",
+    href: "https://unsplash.com/photos/condensation-forms-on-a-glass-window-dE2QfFmAXX8",
   },
   {
     use: "雨夜窗面",
-    author: "Yosuke Ota",
-    href: "https://unsplash.com/photos/raindrops-on-window-with-blurred-yellow-light-outside-1DKjF93xJbg",
+    author: "İsmail Efe Top",
+    href: "https://unsplash.com/photos/rainy-window-from-the-inside-x1MMm4d1szE",
   },
 ] as const;

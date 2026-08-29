@@ -206,7 +206,6 @@ body {
   padding: 0;
   place-items: center;
   appearance: none;
-  border: 0;
   border-radius: 50%;
   background: rgb(0 0 0 / 5%);
   color: inherit;
@@ -253,10 +252,10 @@ body {
 
 .room-timeline {
   --timeline-progress: 0%;
-  --timeline-track-length: min(46svh, 420px);
+  --timeline-track-length: min(34svh, 310px);
   position: absolute;
   top: clamp(82px, 10svh, 112px);
-  right: clamp(14px, 1.8vw, 28px);
+  right: clamp(72px, 6.5vw, 96px);
   bottom: clamp(22px, 3svh, 34px);
   z-index: 18;
   display: flex;
@@ -272,7 +271,7 @@ body {
 }
 
 .white-world[data-furniture-open="true"] .room-timeline {
-  --timeline-track-length: min(27svh, 240px);
+  --timeline-track-length: min(22svh, 190px);
   bottom: calc(var(--room-furniture-panel-height) + 18px);
 }
 
@@ -282,7 +281,7 @@ body {
 
 .room-timeline__rail,
 .room-timeline__events {
-  height: min(66svh, 580px);
+  height: min(47svh, 420px);
   max-height: 100%;
   border: 1px solid rgb(0 0 0 / 8%);
   background: rgb(255 255 255 / 72%);
@@ -304,25 +303,23 @@ body {
 
 .room-timeline__rail {
   display: flex;
-  width: clamp(112px, 8.6vw, 132px);
-  flex: 0 0 clamp(112px, 8.6vw, 132px);
+  width: clamp(52px, 4vw, 58px);
+  flex: 0 0 clamp(52px, 4vw, 58px);
   flex-direction: column;
   align-items: stretch;
-  padding: 12px 12px 16px;
-  border-radius: 28px;
+  padding: 5px 5px 12px;
+  border-radius: 999px;
 }
 
 .room-timeline__rail-header {
   display: flex;
-  min-height: 32px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .room-timeline__toggle {
   display: grid;
-  width: 30px;
+  width: 38px;
   aspect-ratio: 1;
   flex: 0 0 auto;
   padding: 0;
@@ -330,7 +327,10 @@ body {
   appearance: none;
   border: 0;
   border-radius: 50%;
-  background: rgb(0 0 0 / 6%);
+  align-self: center;
+  border: 1px solid rgb(0 0 0 / 7%);
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 7px 18px rgb(0 0 0 / 9%);
   color: inherit;
   cursor: pointer;
   transition:
@@ -339,15 +339,17 @@ body {
 }
 
 .room-timeline__toggle:hover {
-  background: rgb(0 0 0 / 11%);
+  background: #fff;
 }
 
 .white-world[data-night="true"] .room-timeline__toggle {
-  background: rgb(255 255 255 / 10%);
+  border-color: rgb(255 255 255 / 12%);
+  background: rgb(5 10 19 / 92%);
+  box-shadow: 0 7px 20px rgb(0 0 0 / 26%);
 }
 
 .white-world[data-night="true"] .room-timeline__toggle:hover {
-  background: rgb(255 255 255 / 17%);
+  background: rgb(10 17 30 / 96%);
 }
 
 .room-timeline__toggle svg {
@@ -360,38 +362,38 @@ body {
 }
 
 .room-timeline__current,
-.room-timeline__date,
 .room-timeline__event-time {
   font-variant-numeric: tabular-nums;
 }
 
 .room-timeline__current {
-  font-size: 11px;
+  padding: 5px 8px;
+  border: 1px solid rgb(0 0 0 / 8%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 5px 14px rgb(0 0 0 / 9%);
+  color: #111;
+  font-size: 9px;
   font-weight: 400;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.12em;
   line-height: 1;
 }
 
-.room-timeline__phase {
-  align-self: flex-start;
-  max-width: calc(100% - 12px);
-  margin: 5px 6px 8px;
-  overflow: hidden;
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  line-height: 1;
-  opacity: 0.42;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.white-world[data-night="true"] .room-timeline__current {
+  border-color: rgb(255 255 255 / 12%);
+  background: rgb(5 10 19 / 92%);
+  box-shadow: 0 5px 16px rgb(0 0 0 / 24%);
+  color: #fff;
 }
 
 .room-timeline__track {
+  --timeline-axis: 50%;
   position: relative;
   width: 100%;
   height: var(--timeline-track-length);
   flex: 0 1 var(--timeline-track-length);
   min-height: 120px;
-  margin: 12px 0 7px;
+  margin: 14px 0 7px;
 }
 
 .room-timeline__scale {
@@ -404,22 +406,24 @@ body {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 22px;
+  right: auto;
+  left: var(--timeline-axis);
   width: 1px;
-  background: rgb(17 17 17 / 22%);
+  background: rgb(17 17 17 / 16%);
   content: "";
+  transform: translateX(-50%);
 }
 
 .white-world[data-night="true"] .room-timeline__scale::before {
-  background: rgb(255 255 255 / 24%);
+  background: rgb(255 255 255 / 18%);
 }
 
 .room-timeline__tick {
   --timeline-position: 0%;
   position: absolute;
   top: var(--timeline-position);
-  right: 0;
-  left: 18px;
+  right: calc(100% - var(--timeline-axis));
+  left: 0;
   height: 1px;
   transform: translateY(-50%);
 }
@@ -427,28 +431,30 @@ body {
 .room-timeline__tick::before {
   position: absolute;
   top: 0;
-  left: 0;
-  width: 9px;
+  right: auto;
+  left: 100%;
+  width: 7px;
   border-top: 1px solid currentColor;
   content: "";
-  opacity: 0.34;
+  opacity: 0.24;
 }
 
 .room-timeline__tick[data-edge="true"]::before {
-  width: 14px;
-  opacity: 0.62;
+  width: 10px;
+  opacity: 0.42;
 }
 
 .room-timeline__tick small {
   position: absolute;
   top: 0;
-  left: 22px;
+  left: calc(100% + 32px);
   font-size: 8px;
   font-variant-numeric: tabular-nums;
   font-weight: 400;
   letter-spacing: 0.04em;
   line-height: 1;
-  opacity: 0.34;
+  opacity: 0.4;
+  white-space: nowrap;
   transform: translateY(-50%);
 }
 
@@ -456,60 +462,80 @@ body {
   --timeline-position: 0%;
   position: absolute;
   top: var(--timeline-position);
-  left: 18.5px;
+  right: auto;
+  left: var(--timeline-axis);
   z-index: 1;
-  width: 8px;
-  height: 8px;
-  border: 2px solid rgb(255 255 255 / 90%);
+  width: 5px;
+  height: 5px;
+  border: 1px solid rgb(255 255 255 / 90%);
   border-radius: 50%;
-  background: #1769ff;
-  box-shadow: 0 0 0 1px rgb(23 105 255 / 24%);
-  transform: translateY(-50%);
+  background: #111;
+  box-shadow: 0 0 0 1px rgb(17 17 17 / 10%);
+  transform: translate(-50%, -50%);
 }
 
 .white-world[data-night="true"] .room-timeline__marker {
   border-color: rgb(4 8 17 / 90%);
-  background: #72a4ff;
+  background: #fff;
 }
 
 .room-timeline__cursor {
   position: absolute;
   top: var(--timeline-progress);
-  right: 0;
-  left: 7px;
+  right: calc(100% - var(--timeline-axis));
+  left: -62px;
   z-index: 2;
   display: flex;
-  height: 30px;
+  height: 24px;
   align-items: center;
   justify-content: flex-end;
-  padding: 0 10px 0 34px;
-  border-radius: 10px;
-  background: #111;
-  box-shadow: 0 8px 20px rgb(0 0 0 / 16%);
-  color: #fff;
+  padding: 0;
+  background: transparent;
+  color: inherit;
   transform: translateY(-50%);
+}
+
+.room-timeline[data-expanded="true"] .room-timeline__cursor {
+  left: 0;
 }
 
 .room-timeline__cursor::before {
   position: absolute;
-  left: 12px;
-  width: 6px;
-  height: 6px;
-  border: 2px solid #111;
-  border-radius: 50%;
-  background: #fff;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: currentColor;
   content: "";
+  opacity: 0.52;
+}
+
+.room-timeline__cursor::after {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: auto;
+  width: 7px;
+  height: 7px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 94%);
+  content: "";
+  transform: translate(50%, -50%);
 }
 
 .white-world[data-night="true"] .room-timeline__cursor {
-  background: #fff;
-  box-shadow: 0 8px 22px rgb(0 0 0 / 32%);
-  color: #07101f;
+  color: #fff;
 }
 
-.white-world[data-night="true"] .room-timeline__cursor::before {
-  border-color: #fff;
-  background: #07101f;
+.white-world[data-night="true"] .room-timeline__cursor::after {
+  background: rgb(5 10 19 / 94%);
+}
+
+.room-timeline__cursor .room-timeline__current {
+  position: relative;
+  z-index: 1;
+  margin-right: auto;
 }
 
 .room-timeline__track input {
@@ -518,7 +544,7 @@ body {
   left: 50%;
   z-index: 1;
   width: var(--timeline-track-length);
-  height: 100px;
+  height: 46px;
   margin: 0;
   appearance: none;
   background: transparent;
@@ -534,8 +560,8 @@ body {
 
 .room-timeline__track input::-webkit-slider-thumb {
   width: 30px;
-  height: 100px;
-  margin-top: -50px;
+  height: 46px;
+  margin-top: -23px;
   appearance: none;
   border: 0;
   background: transparent;
@@ -549,24 +575,16 @@ body {
 
 .room-timeline__track input::-moz-range-thumb {
   width: 30px;
-  height: 100px;
+  height: 46px;
   border: 0;
   border-radius: 0;
   background: transparent;
 }
 
-.room-timeline__date {
-  padding-left: 6px;
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  line-height: 1;
-  opacity: 0.54;
-}
-
 .room-timeline__events {
   display: flex;
-  width: min(390px, calc(100vw - 188px));
-  min-width: min(390px, calc(100vw - 188px));
+  width: min(390px, calc(100vw - 180px));
+  min-width: min(390px, calc(100vw - 180px));
   flex-direction: column;
   overflow: hidden;
   border-radius: 30px;
@@ -602,7 +620,7 @@ body {
   display: flex;
   min-height: 64px;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 20px;
   padding: 0 22px;
   border-bottom: 1px solid rgb(0 0 0 / 8%);
@@ -627,7 +645,7 @@ body {
   opacity: 0.42;
 }
 
-.room-timeline__events-header > :last-child {
+.room-timeline__events-date {
   font-size: 10px;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.08em;
@@ -727,42 +745,46 @@ body {
   }
 
   .room-timeline {
-    --timeline-track-length: min(34svh, 280px);
+    --timeline-track-length: min(30svh, 240px);
     top: 76px;
-    right: 8px;
+    right: 52px;
     bottom: 14px;
     gap: 7px;
   }
 
   .white-world[data-furniture-open="true"] .room-timeline {
-    --timeline-track-length: min(23svh, 180px);
+    --timeline-track-length: min(19svh, 150px);
     bottom: calc(var(--room-furniture-panel-height) + 10px);
   }
 
   .room-timeline__rail {
-    width: 94px;
-    flex-basis: 94px;
-    padding: 9px 9px 13px;
-    border-radius: 23px;
+    width: 50px;
+    flex-basis: 50px;
+    padding: 5px 5px 10px;
+    border-radius: 999px;
   }
 
   .room-timeline__rail,
   .room-timeline__events {
-    height: min(64svh, 500px);
+    height: min(45svh, 390px);
   }
 
   .room-timeline__events {
-    width: min(270px, calc(100vw - 116px));
-    min-width: min(270px, calc(100vw - 116px));
+    width: min(240px, calc(100vw - 128px));
+    min-width: min(240px, calc(100vw - 128px));
     border-radius: 23px;
   }
 
   .room-timeline__toggle {
-    width: 28px;
+    width: 36px;
   }
 
   .room-timeline__current {
-    font-size: 10px;
+    font-size: 9px;
+  }
+
+  .room-timeline__cursor {
+    left: -55px;
   }
 
   .room-timeline__events-header {

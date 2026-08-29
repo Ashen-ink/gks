@@ -56,6 +56,19 @@ function roomDateLabel(value: string) {
   return match ? `${match[2]}/${match[3]}` : "";
 }
 
+function roomPeriodLabel(value: string) {
+  const match = value.match(/T(\d{2})/);
+  const hour = Number(match?.[1] ?? 12);
+
+  if (hour < 5) return "夜深";
+  if (hour < 8) return "晨光";
+  if (hour < 11) return "上午";
+  if (hour < 14) return "正午";
+  if (hour < 18) return "午后";
+  if (hour < 20) return "暮色";
+  return "夜晚";
+}
+
 THREE.setConsoleFunction((type, message, ...parameters) => {
   if (
     type === "warn" &&
@@ -104,7 +117,7 @@ export default function WhiteWorld() {
       return [];
     }
 
-    const tickCount = Math.min(7, simulationTimeline.length);
+    const tickCount = Math.min(4, simulationTimeline.length);
     return Array.from({ length: tickCount }, (_, index) => {
       const position = (index / (tickCount - 1)) * lastIndex;
       const snapshot = interpolateRoomSimulationSnapshot(
@@ -112,7 +125,7 @@ export default function WhiteWorld() {
         position,
       );
       return {
-        label: snapshot ? roomTimeLabel(snapshot.time) : "",
+        label: snapshot ? roomPeriodLabel(snapshot.time) : "",
         position: (position / lastIndex) * 100,
       };
     });
@@ -588,10 +601,13 @@ export default function WhiteWorld() {
                 <div>
                   <span>时段变化</span>
                   <small>{timelineEvents.length} 项</small>
+                  <time
+                    className="room-timeline__events-date"
+                    dateTime={simulation.time}
+                  >
+                    {roomDateLabel(simulation.time)}
+                  </time>
                 </div>
-                <time dateTime={simulation.time}>
-                  {roomDateLabel(simulation.time)}
-                </time>
               </header>
               {timelineEvents.length > 0 ? (
                 <ol className="room-timeline__event-list">
@@ -625,9 +641,6 @@ export default function WhiteWorld() {
           ) : null}
           <div className="room-timeline__rail">
             <header className="room-timeline__rail-header">
-              <span className="room-timeline__date">
-                {roomDateLabel(simulation.time)}
-              </span>
               <button
                 type="button"
                 className="room-timeline__toggle"
@@ -645,7 +658,6 @@ export default function WhiteWorld() {
                 />
               </button>
             </header>
-            <span className="room-timeline__phase">{solar.phase}</span>
             <div className="room-timeline__track">
               <div className="room-timeline__scale" aria-hidden="true">
                 {timelineTicks.map((tick, index) => (
@@ -690,7 +702,7 @@ export default function WhiteWorld() {
                 aria-valuetext={roomTimeLabel(simulation.time)}
                 min={0}
                 max={simulationTimeline.length - 1}
-                step={0.01}
+                step={0.05}
                 value={timelinePosition}
                 onChange={(event) =>
                   setTimelinePosition(Number(event.currentTarget.value))
