@@ -98,7 +98,7 @@ export default function RoomShell({
         <meshBasicMaterial colorWrite={false} depthWrite={false} />
       </mesh>
       <NaturalWindowLight enabled={!night} />
-      <CameraFacingWalls />
+      <CameraFacingWalls night={night} />
       <WhiteBox position={[0, 0.14, -3.9]} size={[10, 0.2, 0.12]} />
       <WhiteBox position={[-1.875, 0.14, 3.9]} size={[6.25, 0.2, 0.12]} />
       <WhiteBox position={[4.225, 0.14, 3.9]} size={[1.55, 0.2, 0.12]} />

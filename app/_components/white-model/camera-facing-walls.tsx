@@ -5,14 +5,28 @@ import { WhiteBox } from "@/app/_components/white-model/white-mesh";
 import { createWhiteModelMaterial } from "@/app/_components/white-model/white-model-material";
 
 const visibilityThreshold = 0.35;
+const dayLineColor = new THREE.Color("#dcdcdc");
+const dayBackgroundColor = new THREE.Color("#ffffff");
+const nightLineColor = new THREE.Color("#0b1020");
+const nightBackgroundColor = new THREE.Color("#020713");
 
 function updateWall(
   group: THREE.Group | null,
   material: THREE.Material,
   targetOpacity: number,
   delta: number,
+  night: boolean,
 ) {
   if (!group) {
+    return false;
+  }
+
+  if (targetOpacity > 0 && !group.visible) {
+    group.visible = true;
+    group.userData.hiddenFrames = 0;
+  }
+
+  if (targetOpacity === 0 && !group.visible) {
     return false;
   }
 
@@ -34,14 +48,43 @@ function updateWall(
         lineMaterial.needsUpdate = true;
       }
 
-      lineMaterial.opacity = opacity;
+      lineMaterial.opacity = opacity * opacity;
+      lineMaterial.color.lerpColors(
+        night ? nightBackgroundColor : dayBackgroundColor,
+        night ? nightLineColor : dayLineColor,
+        opacity * opacity,
+      );
     }
   });
+
+  if (targetOpacity === 0 && opacity <= 0.001) {
+    material.opacity = 0;
+    group.userData.hiddenFrames = (group.userData.hiddenFrames ?? 0) + 1;
+
+    group.traverse((child) => {
+      if (child instanceof THREE.LineSegments) {
+        const lineMaterial = child.material as THREE.LineBasicMaterial;
+        lineMaterial.opacity = 0;
+        lineMaterial.color.copy(
+          night ? nightBackgroundColor : dayBackgroundColor,
+        );
+      }
+    });
+
+    if (group.userData.hiddenFrames > 1) {
+      group.visible = false;
+      return false;
+    }
+
+    return true;
+  }
+
+  group.userData.hiddenFrames = 0;
 
   return Math.abs(opacity - targetOpacity) > 0.001;
 }
 
-export default function CameraFacingWalls() {
+export default function CameraFacingWalls({ night }: { night: boolean }) {
   const camera = useThree((state) => state.camera);
   const invalidate = useThree((state) => state.invalidate);
   const frontWall = useRef<THREE.Group>(null);
@@ -57,8 +100,9 @@ export default function CameraFacingWalls() {
     };
 
     Object.values(nextMaterials).forEach((material) => {
-      material.transparent = true;
-      material.depthWrite = false;
+      material.alphaHash = true;
+      material.depthWrite = true;
+      material.transparent = false;
     });
 
     return nextMaterials;
@@ -84,10 +128,10 @@ export default function CameraFacingWalls() {
     };
 
     const isFading = [
-      updateWall(frontWall.current, materials.front, targets.front, animationDelta),
-      updateWall(backWall.current, materials.back, targets.back, animationDelta),
-      updateWall(leftWall.current, materials.left, targets.left, animationDelta),
-      updateWall(rightWall.current, materials.right, targets.right, animationDelta),
+      updateWall(frontWall.current, materials.front, targets.front, animationDelta, night),
+      updateWall(backWall.current, materials.back, targets.back, animationDelta, night),
+      updateWall(leftWall.current, materials.left, targets.left, animationDelta, night),
+      updateWall(rightWall.current, materials.right, targets.right, animationDelta, night),
     ].some(Boolean);
 
     if (isFading) {
