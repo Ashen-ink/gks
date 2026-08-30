@@ -29,6 +29,19 @@ function ArrowIcon() {
   );
 }
 
+function DownloadIcon() {
+  return (
+    <CentralIcon
+      name="IconFileDownload"
+      join="round"
+      fill="outlined"
+      radius="3"
+      stroke="1.5"
+      size={20}
+    />
+  );
+}
+
 export default function HomePage() {
   return (
     <SmoothScroll>
@@ -205,10 +218,28 @@ export default function HomePage() {
             可以留在抽屉里。
           </h2>
           <p>天气变化后，房子重算下一步。住户手动操作，自动控制立即暂停。</p>
-          <Link href="/room" className={styles.closingCta}>
-            <span>查看房间模拟</span>
-            <ArrowIcon />
-          </Link>
+          <div className={styles.closingActions}>
+            <Link href="/room" className={styles.closingCta}>
+              <span>查看房间模拟</span>
+              <ArrowIcon />
+            </Link>
+            <a
+              href="/常宁居技术白皮书.pdf"
+              className={styles.closingResource}
+              download="常宁居技术白皮书.pdf"
+            >
+              <span>下载白皮书</span>
+              <DownloadIcon />
+            </a>
+            <a
+              href="/常宁居.pdf"
+              className={styles.closingResource}
+              download="常宁居-Slide.pdf"
+            >
+              <span>下载 Slide</span>
+              <DownloadIcon />
+            </a>
+          </div>
         </div>
       </footer>
       </main>

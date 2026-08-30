@@ -138,7 +138,8 @@
 }
 
 .headerCta path,
-.closingCta path {
+.closingCta path,
+.closingResource path {
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
@@ -800,9 +801,17 @@
   line-height: 1.6;
 }
 
-.closingCta {
+.closingActions {
+  display: grid;
+  width: min(100%, 980px);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.closingCta,
+.closingResource {
   display: flex;
-  width: min(100%, 420px);
+  width: 100%;
   align-items: center;
   justify-content: space-between;
   padding: 18px 20px;
@@ -814,11 +823,13 @@
     color 220ms ease;
 }
 
-.closingCta svg {
+.closingCta svg,
+.closingResource svg {
   width: 28px;
 }
 
-.closingCta:hover {
+.closingCta:hover,
+.closingResource:hover {
   background: var(--acid);
   color: #090a09;
 }
@@ -1233,6 +1244,10 @@
     width: 100%;
   }
 
+  .closingActions {
+    grid-template-columns: 1fr;
+  }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1256,6 +1271,7 @@
 
   .headerCta,
   .closingCta,
+  .closingResource,
   .chapterMore,
   .chapterMore svg {
     transition: none;
