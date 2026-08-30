@@ -238,7 +238,7 @@ export default function WhiteWorld() {
       const elapsed = Math.min(time - previousTime, 250);
       previousTime = time;
       setTimelinePosition((current) => {
-        const next = current + elapsed / 6000;
+        const next = current + elapsed / 1200;
         return next >= lastIndex ? 0 : next;
       });
       animationFrame = window.requestAnimationFrame(advance);
