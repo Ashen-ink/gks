@@ -224,7 +224,7 @@ export default function HomePage() {
               <ArrowIcon />
             </Link>
             <a
-              href="/常宁居技术白皮书.pdf"
+              href="/whitepaper.pdf"
               className={styles.closingResource}
               download="常宁居技术白皮书.pdf"
             >
@@ -232,7 +232,7 @@ export default function HomePage() {
               <DownloadIcon />
             </a>
             <a
-              href="/常宁居.pdf"
+              href="/slides.pdf"
               className={styles.closingResource}
               download="常宁居-Slide.pdf"
             >
